@@ -4,7 +4,8 @@ import { fileURLToPath } from "node:url";
 import { sealSlot } from "../lib/table-key.js";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const src = path.join(root, "lib", "default-prompt-inject.md");
+/* 出厂默认提示词取 .bak（加密槽里就是这一份）；明文原文不入库。 */
+const src = path.join(root, "lib", "default-prompt-inject.md.bak");
 const dest = path.join(root, "lib", "asset-table.js");
 
 if (!fs.existsSync(src)) {

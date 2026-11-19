@@ -120,10 +120,10 @@ if (!client.includes(".dshp-dock{")) {
 .dshp-auth-ops button,.dshp-dock-head button{appearance:none;border:1px solid var(--dsw-alias-border-l1,#444);background:transparent;color:inherit;border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit}
 .dshp-auth-ops button.primary{background:#2a4033;border-color:#8fbf9a}
 .dshp-auth-ops button:disabled{opacity:.45;cursor:default}
-.dshp-icon-btn{appearance:none;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary,currentColor);cursor:pointer;font:13px/1 inherit}
-.dshp-icon-btn.on,.dshp-icon-btn:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));color:var(--dsw-alias-label-primary,currentColor)}
-.dshp-hbtn{appearance:none;border:0;background:transparent;color:var(--dsw-alias-label-secondary,currentColor);cursor:pointer;font:12px/1 inherit;padding:4px 8px;border-radius:8px}
-.dshp-hbtn.on,.dshp-hbtn:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));color:var(--dsw-alias-label-primary,currentColor)}
+.dshp-hero-chip,.dshp-tab-chip{display:inline-flex;align-items:center;margin-left:8px;flex:0 0 auto}
+.dshp-hero-chip-btn,.dshp-tab-btn{appearance:none;display:inline-flex;align-items:center;height:32px;padding:0 14px;border:1px solid color-mix(in srgb,currentColor 22%,transparent);border-radius:999px;background:color-mix(in srgb,currentColor 6%,transparent);color:inherit;cursor:pointer;font:inherit;font-size:13px;line-height:1;white-space:nowrap}
+.dshp-hero-chip-btn:hover,.dshp-tab-btn:hover{background:color-mix(in srgb,currentColor 10%,transparent)}
+.dshp-hero-chip-btn.on,.dshp-tab-btn.on{border-color:color-mix(in srgb,currentColor 38%,transparent)}
 `;
 	// Find end of PURGE_CSS - the backtick after Rewind starts at REWIND_CSS
 	const purgeCssEnd = client.indexOf("\t\tconst REWIND_CSS");
@@ -334,47 +334,6 @@ const dockBlock = `
 			);
 		}
 
-		function HeroNewSessionMount() {
-			const t = useT();
-			const st = useDock();
-			const [host, setHost] = useState(null);
-			useEffect(() => {
-				let dead = false;
-				const ensure = () => {
-					if (dead || typeof document === "undefined") return;
-					const row = document.querySelector('[class*="heroWorkspaceRow"]');
-					if (!row) { setHost((prev) => (prev ? null : prev)); return; }
-					let el = row.querySelector(":scope > .dshp-hero-chip");
-					if (!el) {
-						el = document.createElement("div");
-						el.className = "dshp-hero-chip";
-						row.appendChild(el);
-					}
-					setHost((prev) => (prev === el ? prev : el));
-				};
-				ensure();
-				const obs = typeof MutationObserver !== "undefined" ? new MutationObserver(() => ensure()) : null;
-				if (obs) obs.observe(document.body, { childList: true, subtree: true });
-				const iv = setInterval(ensure, 1000);
-				return () => { dead = true; if (obs) obs.disconnect(); clearInterval(iv); };
-			}, []);
-			if (!host) return null;
-			const btn = h("button", {
-				type: "button",
-				className: "dshp-hero-chip-btn" + (st.open ? " on" : ""),
-				title: t("dock.newSession"),
-				onClick: () => toggleDock(),
-			},
-				st.open ? h("span", { className: "dshp-live-dot", "aria-hidden": "true" }) : null,
-				t("dock.newSession"),
-			);
-			try {
-				const rd = require("react-dom");
-				if (rd && typeof rd.createPortal === "function") return rd.createPortal(btn, host);
-			} catch { /* ignore */ }
-			return null;
-		}
-
 `;
 
 if (!client.includes("function PurgeDock()")) {
@@ -415,7 +374,7 @@ const newApply = `		function apply(ctx) {
 				name: "shell.overlay",
 				id: "dsh-purge-safe-dock",
 				order: 50,
-			}, () => h(react.Fragment, null, h(PurgeDock), h(HeroNewSessionMount), h(TabRowPurgeMount), h(EnvAdaptSendGate))));
+			}, () => h(react.Fragment, null, h(WelcomeNotice), h(PurgeDock), h(HeroNewSessionMount), h(TabRowPurgeMount), h(EnvAdaptSendGate))));
 			try {
 				if (typeof ctx.inject === "function") {
 					ctx.inject(["sessions", "uiWorkspace", "workspaces", "conversation"], (host) => installRewindUi(host));
@@ -434,11 +393,28 @@ const newApply = `		function apply(ctx) {
 		}`;
 
 if (client.includes('id: "dsh-purge-safe-dock"')) {
-	// already patched apply
+	client = client.replace(
+		/\t\t\tctx\.slots\.inject\("settings\.section", \(\) => ctx\.slots\.register\(\{[\s\S]*?\}, SettingsRoot\)\);\r?\n/,
+		"",
+	);
+	if (!client.includes("h(HeroNewSessionMount)")) {
+		client = client.replace(
+			"h(WelcomeNotice), h(PurgeDock), h(EnvAdaptSendGate)",
+			"h(WelcomeNotice), h(PurgeDock), h(HeroNewSessionMount), h(TabRowPurgeMount), h(EnvAdaptSendGate)",
+		);
+		client = client.replace(
+			"h(PurgeDock), h(EnvAdaptSendGate)",
+			"h(PurgeDock), h(HeroNewSessionMount), h(TabRowPurgeMount), h(EnvAdaptSendGate)",
+		);
+	}
 } else if (client.includes(oldApply)) {
 	client = client.replace(oldApply, newApply);
 } else {
 	throw new Error("apply() block not found for replacement");
+}
+
+if (!client.includes("function HeroNewSessionMount()")) {
+	throw new Error("HeroNewSessionMount missing; keep NativeChipMount in client.js");
 }
 
 writeFileSync(clientPath, client);
