@@ -28,6 +28,8 @@ lib/default-prompt-inject.md
 lib/default-prompt-inject.zh.md
 lib/default-prompt-inject.en.md
 default-prompt-inject.md
+default-prompt-inject.zh.md
+default-prompt-inject.en.md
 
 # 本机官方安装包、解包目录、拆出的压缩包
 /deepseek-harness-*.exe
@@ -36,3 +38,49 @@ default-prompt-inject.md
 *.asar
 *.asar.bak
 *.bak
+
+# Git 元数据与本机 IDE / AI 工作区配置
+.git
+.idea/
+.vscode/
+.codex/
+.claude/
+.agents/
+.windsurf/
+*.iml
+*.ipr
+*.iws
+*.code-workspace
+
+# 本地环境变量；保留不含真实凭据的示例模板
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+!.env.template
+
+# 本机认证配置、云凭据与私钥
+.npmrc
+.pypirc
+.netrc
+_netrc
+.ssh/
+.aws/
+.azure/
+.config/gcloud/
+.secrets/
+secrets/
+credentials.json
+credentials.*.json
+service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519

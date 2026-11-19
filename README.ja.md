@@ -4,17 +4,15 @@
 
 <h1 align="center">⚔️ DeepSeek Harness サイバーセキュリティ レッドチームツール (dsh-purge-safe)</h1>
 
-<p align="center"><strong>バージョン 0.1.0</strong></p>
+<p align="center"><strong>バージョン 2.0.0</strong></p>
 
 <p align="center">
-  <em>DeepSeek Harness のジェイルブレイク: すべてのモデルに対応し、モデルごとにプロンプトを切り替え。デフォルトプロンプトは 鸢码 用。ぜひ Star ⭐ を。これをベースに開発する場合は「要帰属表示」をご覧ください。</em>
+  <em>フル機能版 + Super Agent 対応 · DSH 0.2.2-rc.3 · プロンプト最適化、拒否率低減、安定性向上。</em>
 </p>
 
 <p align="center">
-  <a href="https://github.com/CallMeGuLab/dsh-purge-safe/stargazers"><img src="https://img.shields.io/github/stars/CallMeGuLab/dsh-purge-safe?logo=github&label=Stars" alt="GitHub stars"></a>
-  <a href="https://github.com/CallMeGuLab/dsh-purge-safe/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat" alt="Apache-2.0"></a>
-  <a href="https://github.com/CallMeGuLab/dsh-purge-safe/releases"><img src="https://img.shields.io/github/v/release/CallMeGuLab/dsh-purge-safe?label=release" alt="Release"></a>
-  <a href="https://www.deepseek.com/harness/"><img src="https://img.shields.io/badge/dsh-0.2.0--rc.2%20%2F%200.2.1--rc.2-blue" alt="DSH"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue?style=flat" alt="Apache-2.0"></a>
+  <a href="https://www.deepseek.com/harness/"><img src="https://img.shields.io/badge/dsh-0.2.2--rc.3-blue" alt="DSH"></a>
   <br>
   <img src="https://img.shields.io/badge/Node.js-%3E%3D18-339933?logo=node.js&logoColor=fff" alt="Node.js">
   <img src="https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=000" alt="JavaScript">
@@ -25,8 +23,16 @@
   <a href="README.md">English</a> | <a href="README.zh-CN.md">中文</a> | <a href="README.ja.md">日本語</a>
 </p>
 
+## コミュニティと技術サポート
+
+Telegram コミュニティで最新情報を確認し、学習・情報交換・技術サポートにご参加ください。プロジェクトの共有も歓迎します。
+
+- **チャンネル**: [LLM_PoJia](https://t.me/LLM_PoJia)
+- **交流グループ**: [xiaomajiang9919](https://t.me/xiaomajiang9919)
+
 ## 目次
 
+- [更新内容](#更新内容)
 - [これは何か](#これは何か)
 - [要帰属表示](#要帰属表示)
 - [ライセンス](#ライセンス)
@@ -39,9 +45,18 @@
 
 ---
 
+## 更新内容
+
+**フル機能版 + Super Agent 対応**
+
+- **DeepSeek Harness 0.2.2-rc.3** に対応。
+- **Super Agent** を追加。
+- プロンプトを最適化。
+- 拒否率を低減し、安定性を向上。
+
 ## これは何か
 
-**dsh-purge-safe** は、お使いのマシンにすでにインストールされている公式 [DeepSeek Harness](https://www.deepseek.com/harness/) 向けのサイバーセキュリティ レッドチームプラグインです。**0.1.0** は **DSH 0.2.1-rc.5** を対象とします（rc.2 も動作します）。 公式 **Web**（`dsh web`）と公式 **デスクトップ EXE** の両方に対応します。インストールと Apply はそれぞれ別々に行います。
+**dsh-purge-safe** は、ローカルにインストールされた公式 [DeepSeek Harness](https://www.deepseek.com/harness/) 向けのサイバーセキュリティ評価プラグインです。このフル機能版は **DSH 0.2.2-rc.3** と **Super Agent** に対応します。公式 **Web**（`dsh web`）と公式**デスクトップ EXE** に対応し、インストールと Apply は別々に行います。
 
 Harness は単にプロンプトを転送するだけではありません。プロンプトの書き換え、承認ゲート、サンドボックスポリシー、セッション移行を実行時に行います。「モデルは答えるか」だけを問うと、ホスト層のブロックをモデルの拒否と取り違えてしまいます。このプラグインは、あなた自身のインストール環境でこの 2 つの層を分離し、制御された評価や、どのデフォルトポリシーが過度に厳しいかを確認するために使います。
 
@@ -51,7 +66,7 @@ Harness は単にプロンプトを転送するだけではありません。プ
 | **Clean** | グループ化されたパッチ状況、Apply / Restore / Uninstall、プロンプトエディタ、複数のルールセット |
 | **Drill** | 安定版に内蔵。認可後: アセットとローカル環境。スキルライブラリとナレッジベースも同梱されます。ローカルラボ専用 |
 | **ホストポリシー** | デフォルトのコピー、権限ポリシー、ツール制限。公式の機能はそのまま。2 つ目の架空アイデンティティは作らない |
-| **起動時** | チェックして再適用。npm が `node_modules` を上書きした後も、ファイルを手編集しなくてよい |
+| **起動時** | ローカル版では自動適用は初期設定で無効です。Clean → Apply を使用し、必要に応じて起動時の再適用を設定します。 |
 
 ドライブレターのハードコードはありません。`$DSH_HOME`、dsh ランチャー横の `.dsh`、次に `~/.dsh` を参照します。Harness のソースツリーにはパッチしません。変更を書き込むのは **dsh-purge-safe** の **Clean** ページの **Apply** です。アイデンティティはプラグインに同梱された暗号化プロンプト、つまりプロンプトボックスがデフォルトで表示するテキストから来ます。ホストのプロンプトファイルは読みません。
 
@@ -65,13 +80,13 @@ Harness は単にプロンプトを転送するだけではありません。プ
 
 **オリジナルビルドの転売は禁止です。** 有料転売、ストア掲載のための再スキン、商用製品としての配布は許可されません。
 
-**フォークは帰属表示が必須** で、出所のリポジトリを明記してください: [CallMeGuLab/dsh-purge-safe](https://github.com/CallMeGuLab/dsh-purge-safe)。名前、アイデア、コード、プロンプトを借用する場合も同様です。
+**フォークは帰属表示が必須** で、出所のリポジトリを明記してください: [dsh-purge-safe / CallMeGuLab](./NOTICE)。名前、アイデア、コード、プロンプトを借用する場合も同様です。
 
 帰属表示の削除、出所の隠蔽、オリジナルの転売は、運営チームとして追及します。
 
 ## ライセンス
 
-本リポジトリは [Apache License 2.0](./LICENSE) です。フォークおよび再配布では著作権表示と [NOTICE](./NOTICE) を保持し、[CallMeGuLab/dsh-purge-safe](https://github.com/CallMeGuLab/dsh-purge-safe) を明記してください。オリジナルの転売は禁止です。
+本リポジトリは [Apache License 2.0](./LICENSE) です。フォークおよび再配布では著作権表示と [NOTICE](./NOTICE) を保持し、[dsh-purge-safe / CallMeGuLab](./NOTICE) を明記してください。オリジナルの転売は禁止です。
 
 ---
 
@@ -89,7 +104,7 @@ Harness は単にプロンプトを転送するだけではありません。プ
 
 1. **本リポジトリに違法な素材は含まれません。** 公開されているコード、ドキュメント、パッチ、デフォルトプロンプトは、マルウェア、バックドア、未認可のペンテストキット、ランサムウェア、クレデンシャルスタッフィングスクリプト、公開インターネットや第三者システムを狙う攻撃ペイロードでは **ありません**。本プロジェクトは違法コンテンツを提供せず、犯罪を扇動・組織・幇助しません。
 2. **ローカルの公式 Harness のみ。** セキュリティ評価用パッチとプロンプトインジェクションは、**ユーザーのマシンにすでにインストールされた公式 DeepSeek Harness**（`@deepseek-ai` パッケージ、ローカルプロファイル / `$DSH_HOME`）に対してのみ動作します。対象はユーザー自身の公式ローカルソフトウェアであり、**他人のウェブサイト、サーバー、アカウント、情報システムではありません**。
-3. **評価用パッチは公開インターネットを攻撃しません。** Apply、インジェクト、リバート、アンインストールはすべてローカルファイルとローカルプロセス内に留まります。いかなる公開ホストや未認可システムに対しても、**スキャン、探査、侵入、攻撃トラフィックの送信を行いません**。本プロジェクトを公開インターネットへの踏み台として使わないでください。「更新確認」が有効な場合、プラグインはバージョン比較のために本プラグイン自身の GitHub リポジトリにのみアクセスすることがあります。これは第三者システムへの攻撃では **なく**、何かへの侵入を認可するものでも **ありません**。
+3. **評価用パッチは公開インターネットを攻撃しません。** Apply、インジェクト、リバート、アンインストールはすべてローカルファイルとローカルプロセス内に留まります。いかなる公開ホストや未認可システムに対しても、**スキャン、探査、侵入、攻撃トラフィックの送信を行いません**。本プロジェクトを公開インターネットへの踏み台として使わないでください。このローカル固定版ではオンライン更新は無効です。これは第三者システムへの攻撃では **なく**、何かへの侵入を認可するものでも **ありません**。
 4. **合法かつ制御された範囲。** 本プロジェクトは、ユーザーが **管理する権限を有する公式 Harness** 上でのレッドチーム研究と堅牢性評価の補助ツールです。**所有者の合法的な書面による認可のないターゲット、公開オンラインシステム、本番ワークロードに対して実行しないでください。** テストは **認可されたローカルの公式 Harness、オフラインのローカル合成フィクスチャ、認可されたサイバーセキュリティレンジ、準拠したラボ環境** に限ります。
 5. **禁止される用途。** 利用者は、本プロジェクトを直接・間接を問わず、以下に違反する目的で使用してはなりません（いずれも遵守必須。回避の口実は認められません）:
    - <font color="red"><strong>中華人民共和国刑法</strong></font>
@@ -114,246 +129,38 @@ Harness は単にプロンプトを転送するだけではありません。プ
 
 ## 対応ホスト
 
-**0.1.0 は DSH 0.2.1-rc.5 を対象とします。** 0.2.1-rc.2 も動作します。
+この版は **DSH 0.2.2-rc.3** と **Super Agent** を対象とします。公式 Web とデスクトップは別々にインストールし、適用します。
 
-- **dsh 0.2.1-rc.5**（公式デスクトップ / 公式 `dsh web`）: 推奨。`{{cwd}}` / `[cwd]` クラッシュ、patch #40 のマッチ、削除された `toolFilter`、ホスト `dsh-tools` の解決、hostFs の fd、デスクトップヘルパーの自己終了、`file:` アーカイブ更新、Ctrl+Enter ステアを修正。
-- **dsh 0.2.1-rc.2**: 対応。
-- **dsh 0.2.1-rc.3 / rc.4 以降は非対応です。** マッチしないパッチは pending または skipped のままで、盲目的な書き換えはしません。**0.2.1-rc.5** または **0.2.1-rc.2** を使用してください。
-
-マッチしないパッチは pending または skipped のままで、盲目的な書き換えはしません。
+一致しないパッチは pending または skipped として保持され、ファイルを盲目的に書き換えません。
 
 ---
 
 ## インストール
 
-**プラグインマーケットプレイスは使わないでください。** [dsh-plugin.org](https://dsh-plugin.org) や 設定 → プラグインマーケット でのワンクリックインストールは `already queued: dsh-purge-safe` で失敗し、コマンドを実行しません。`dsh-purge-safe` という名前は npm レジストリにないので、`pnpm add dsh-purge-safe` はしないでください。
-
-### クイックスタート
-
-PATH に `dsh` があれば、コマンド 1 つ、再起動 1 回、クリック 1 回。自分が開いているホストのコマンドをそのまま実行します（デスクトップ EXE は `web` の代わりに `desktop`）:
+アーカイブを `dsh-purge-safe` という名前のローカルディレクトリに展開し、実際に使用するホストにインストールします。
 
 ```sh
-# 公式 `dsh web`
-dsh plugin --profile web add https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main
+# 公式 dsh web。実際の展開先に置き換えてください
+dsh plugin --profile web add /absolute/path/to/dsh-purge-safe
 
 # 公式デスクトップ EXE
-dsh plugin --profile desktop add https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main
+dsh plugin --profile desktop add /absolute/path/to/dsh-purge-safe
 ```
 
-1. インストールしたホストを **完全に終了して再起動** します。Web: `dsh web` を停止して起動し直す。デスクトップ: トレイアイコンも終了してから exe を開く。
-2. そのホストで、セッションタイトルの横の **dsh-purge-safe** → **Clean** → **Apply** をクリック。成功した Apply は 1 回だけ再起動します。
+ホストを完全に終了して再起動し、セッションタイトル横の **dsh-purge-safe → Clean → Apply** を選択します。Apply が成功すると一度再起動します。`/purge status` でホームとパッチ状況を確認します。
 
-完了 — チャットで `/purge status` を実行して確認します。pnpm がビルド許可を尋ねてきた場合や、下記の何かが現れない場合は、この後のステップ別の手順に進んでください。
-
-### ステップバイステップ
-
-**ステップ 1 — 使うホストを選ぶ。** 公式 `dsh web` と公式デスクトップ EXE は **別々に** インストール・パッチされます。実際に開くホストにのみインストールしてください。
-
-| 実行するもの | プロファイル | インストールコマンド |
-|---|---|---|
-| 公式 `dsh web` | `web` | クイックスタートの `web` の行 |
-| 公式デスクトップ EXE | `desktop` | クイックスタートの `desktop` の行 |
-
-**ステップ 2 — プラグインを入れる。** 圧縮パッケージの URL は `codeload.github.com` の書き方そのままにしてください。`github.com/.../archive` は使わないでください。その 302 により pnpm が `fetch failed` で失敗します。
-
-`dsh` がある場合: クイックスタートの自分のプロファイルの行を実行します。このディレクトリがすでにクローンなら、URL の代わりに `.` を使います。
-
-pnpm のみ（`dsh` 不要）: リポジトリのルートではなく、実際に使うプロファイル内で実行してください。
-
-```sh
-cd "$DSH_HOME/profiles/web"    # desktop: profiles/desktop
-pnpm add https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main
-```
-
-Windows PowerShell:
-
-```powershell
-cd "$env:USERPROFILE\.dsh\profiles\web"   # desktop: profiles\desktop
-pnpm add https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main
-```
-
-`pnpm add` と `dsh plugin add` はパッケージを取得します。`postinstall` が `dsh-purge-safe` を `dsh.profile.bundles` に書き込み、プロファイルの `cordis.patch.yml` に body `insert` を追加します。その insert がないとホストはプラグインを読み込まず、ボタンも現れません。
-
-**完了の目安:** `node_modules/dsh-purge-safe/package.json` が存在し、そのプロファイルの `bundles` に `"dsh-purge-safe"` があり、`cordis.patch.yml` に `id: dsh-purge-safe` の insert があること。
-
-- pnpm 11/12 はビルドを許可しないとインストールスクリプトをスキップします（`ERR_PNPM_IGNORED_BUILDS`）:
-
-```sh
-pnpm add --allow-build=dsh-purge-safe --allow-build=dsh-purge-safe@https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main
-# すでにインストール済みで警告のみの場合 — 完全な指定子が必要です（名前だけだと "set this to true or false" が残ります）:
-pnpm approve-builds dsh-purge-safe@https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main
-# bundles / insert がまだ無い場合:
-node node_modules/dsh-purge-safe/scripts/ensure-profile-bundle.mjs
-```
-
-- `dsh` も pnpm も使えない場合は [手動インストール](#手動) に進んでください。
-- デスクトップクライアントではボタンをクリックすることもできます（`dsh://` ディープリンク。同じ tarball をダウンロードします）。
-
-<p align="center">
-  <a href="dsh://plugin/install?id=dsh-purge-safe&name=dsh-purge-safe&version=0.1.0&repo=CallMeGuLab%2Fdsh-purge-safe&permissions=%E7%B3%BB%E7%BB%9F%E6%8F%90%E7%A4%BA%E8%AF%8D%E6%B3%A8%E5%85%A5%2C%E6%9C%AC%E6%9C%BA%E8%A1%A5%E4%B8%81%2C%E8%AE%BE%E7%BD%AE%E9%A1%B5&downloadUrl=https%3A%2F%2Fcodeload.github.com%2FCallMeGuLab%2Fdsh-purge-safe%2Ftar.gz%2Frefs%2Fheads%2Fmain"><strong>デスクトップクライアントでインストール</strong></a>
-</p>
-
-**ステップ 3 — ホストを再起動する。** プラグインをプロファイルに追加しただけでは、`@deepseek-ai` にパッチは当たりません。インストールしたホストを完全に終了して再起動します（Web: `dsh web` を停止して起動し直す。デスクトップ: トレイアイコンも終了してから exe を開く）。
-
-**完了の目安:** セッションタイトルの横に **dsh-purge-safe** がある。見当たらない場合はステップ 5 へ。
-
-**ステップ 4 — Apply して確認。** **そのホスト** で、セッションタイトルの横の **dsh-purge-safe** をクリックし、**Clean** を開いて **Apply** をクリック。ホストの設定ページにはありません。成功した **Apply** は 1 回だけ再起動します。完了しなかった場合は再起動しません。Web のコントロールは Web のみに、デスクトップのコントロールはデスクトップアプリのみに作用します。片方のホストからもう片方を Apply しないでください。
-
-**完了の目安:** チャットで `/purge status` を打つと `DSH_HOME` とパッチ一覧が表示され、パスは実際に実行しているホームであること。インストールされていないオプションパッケージ（liangshen）は skipped と表示され、Apply を妨げません。
-
-**ステップ 5 — トラブルシューティング。** 上のステップが「完了の目安」で終わらなかったときだけ読むセクションです。
-
-- **セッションタイトルの横にボタンが無い。** `dsh --dump-config`（または `dsh --profile desktop --dump-config`）を実行し、body 行に `id: dsh-purge-safe`（`dsh-purge-safe-redteam` ではない）があるか確認します。無ければステップ 2 の `ensure-profile-bundle.mjs` を実行し、ホストを完全に終了して再起動します。このバージョン以降は、起動時にライブのレッドチーム子エントリが欠けている insert も書き込みます — もう一度終了・再起動してください。先頭の `entry "redteam-store" not found` は古いレッドチームパッケージの名残で、無視して構いません。
-- **マーケットが `already queued: dsh-purge-safe` と言う。** マーケットのクリックをやめてください。ステップ 2 の `dsh plugin add` か pnpm を再度使います。CLI もすでにあると言う場合は、先に削除してから入れ直し、ステップ 3 をやり直します:
-
-```sh
-dsh plugin --profile desktop remove dsh-purge-safe
-dsh plugin --profile desktop add https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main
-```
-
-pnpm のみ:
-
-```sh
-cd "$DSH_HOME/profiles/desktop"
-pnpm remove dsh-purge-safe
-pnpm add https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main
-```
-
-Web では `desktop` を `web` に置き換えます。
-
-### その他
-
-**アシスタントに任せる。** 以下のブロックをローカルアシスタントに貼ってください。実行すべきはインストールコマンドのみです — ディスクスキャン、ほかの編集、Apply、再起動はしません。
-
-<details>
-<summary><strong>AI アシスタント向け（インストールのみ）</strong></summary>
-
-<!-- AI-AGENT-START -->
-
-DeepSeek Harness プラグイン `dsh-purge-safe` を Web プロファイルのみにインストールしてください。ディスク全体をスキャンしない、ほかのファイルを読み書きしない、設定を適用しない、アプリを再起動しない。desktop プロファイルにはインストールしない。プラグインマーケットプレイスは使わない。この名前は npm レジストリにないので `pnpm add dsh-purge-safe` はしない。
-
-**Web（公式 `dsh web`）**
-
-`dsh` が PATH にある場合:
-
-```sh
-dsh plugin --profile web add https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main
-```
-
-`dsh` が無く pnpm がある場合は、`$DSH_HOME/profiles/web`（多くは `~/.dsh/profiles/web`）に `cd` して実行:
-
-```sh
-pnpm add https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main
-```
-
-このディレクトリがすでにクローンで `dsh` がある場合は `dsh plugin --profile web add .` を使う。`dsh` も pnpm も無ければ、ユーザーに伝えて停止する。
-
-コマンドが完了したら、`dsh web` を完全に終了して再起動し、セッションタイトル横の **dsh-purge-safe** を開いて **Clean** の **Apply** を押すようユーザーに伝える。その後停止する。
-
-<!-- AI-AGENT-END -->
-
-</details>
-
+<a id="manual"></a>
 <a id="手動"></a>
 
-**手動インストール。** コマンドが失敗する場合、または `dsh` が PATH に無い場合に使います。**実行するホストのプロファイルだけ** を編集してください — もう片方には触れず、既存の bundles を削除しないでください。
+### 手動インストール
 
-<details>
-<summary><strong>完全な手動手順</strong></summary>
+1. `profiles/web` または `profiles/desktop` を含む、使用中の `$DSH_HOME` を確認します。
+2. プラグインを `$DSH_HOME/plugins/dsh-purge-safe` に配置します。
+3. 対象プロファイルの `package.json` の `dependencies` に `"dsh-purge-safe": "file:../../plugins/dsh-purge-safe"`、`dsh.profile.bundles` に `"dsh-purge-safe"` を追加します。既存の設定は保持します。
+4. そのプロファイルで `pnpm install` を実行し、`node_modules/dsh-purge-safe/package.json` を確認します。
+5. ホストを完全に再起動して **Clean → Apply** を選択します。
 
-**1. このホストが使う `$DSH_HOME` を見つける。** 本物のホームは `.dsh`（公式 EXE では `dsh-home` のこともある）という名前で、`profiles` を含み、少なくとも 1 つの `profiles/<name>/package.json` を持ちます。順に確認: `DSH_HOME` 環境変数 → インストールルート横の `.dsh`（ポータブル）→ `%USERPROFILE%\.dsh` または `~/.dsh` → `%APPDATA%` / `%LOCALAPPDATA%\DeepSeek Harness\dsh-home`。確認: `profiles/web/package.json` の `"name"` が `"dsh-profile-web"`（または `dsh-profile-desktop`）であること。マシンにはホームが 2 つあることが多いので、実際に起動するホストのものを使ってください。
-
-候補を一覧する PowerShell:
-
-```powershell
-$cands = @()
-if ($env:DSH_HOME) { $cands += $env:DSH_HOME }
-$cands += "$env:USERPROFILE\.dsh"
-$dsh = Get-Command dsh -ErrorAction SilentlyContinue
-if ($dsh) {
-  $dir = Split-Path $dsh.Source
-  $cands += @((Join-Path $dir ".dsh"), (Join-Path (Split-Path $dir) ".dsh"), (Join-Path (Split-Path (Split-Path $dir)) ".dsh"))
-}
-$cands += @("$env:APPDATA\DeepSeek Harness\dsh-home", "$env:LOCALAPPDATA\DeepSeek Harness\dsh-home")
-$cands | Select-Object -Unique | Where-Object { $_ -and (Test-Path (Join-Path $_ "profiles")) }
-```
-
-**2. プラグインを `$DSH_HOME/plugins/dsh-purge-safe` に置く**（フォルダ名は `dsh-purge-safe`、`package.json` の `"name"` も `dsh-purge-safe`）。
-
-```sh
-git clone https://github.com/CallMeGuLab/dsh-purge-safe.git "$DSH_HOME/plugins/dsh-purge-safe"
-```
-
-git が無い場合: [main.tar.gz](https://github.com/CallMeGuLab/dsh-purge-safe/archive/refs/heads/main.tar.gz) をダウンロードし、展開して `dsh-purge-safe-main` → `dsh-purge-safe` にリネームし、`plugins` 以下に置きます。すでにクローンがある場合は、いくつかの `.js` ファイルではなくツリー全体をコピーしてください。
-
-**3. そのプロファイルの `package.json` だけを編集する — まずバックアップ。** Web → `$DSH_HOME/profiles/web/package.json`; desktop → `$DSH_HOME/profiles/desktop/package.json`。既存の依存関係と bundle をすべて残したまま、**2 つだけ** 追加します:
-
-1. `dependencies` に `"dsh-purge-safe": "file:../../plugins/dsh-purge-safe"` を追加
-2. `dsh.profile.bundles` の **末尾** に `"dsh-purge-safe"` を追加（すでにあればスキップ）
-
-```json
-{
-  "name": "dsh-profile-web",
-  "private": true,
-  "dependencies": {
-    "dsh-purge-safe": "file:../../plugins/dsh-purge-safe"
-  },
-  "dsh": {
-    "profile": {
-      "bundles": [
-        "@deepseek-ai/dsh-base",
-        "@deepseek-ai/dsh-web-app",
-        "dsh-purge-safe"
-      ],
-      "patchReload": "live"
-    }
-  }
-}
-```
-
-JSON を有効に保ってください（新しい項目の前にカンマ、最後の項目の後ろには無し）。`file:../../plugins/dsh-purge-safe` を絶対パスに変えない、`patchReload` やほかのプラグインに触れない、`"dsh-purge-safe"` を 2 回並べないこと。desktop に `dsh-web-app` 行が無い場合は追加しないでください。
-
-**4. そのプロファイルだけで `pnpm install` を実行**（リポジトリルートや `$DSH_HOME` ではなくプロファイルディレクトリに `cd`）:
-
-```sh
-cd "$DSH_HOME/profiles/web"   # または profiles/desktop
-pnpm install
-```
-
-成功: `profiles/<web|desktop>/node_modules/dsh-purge-safe/package.json` が存在すること。`pnpm` が無い場合は公式 `dsh` に同梱の Node / pnpm を使います。`Could not resolve` の場合は `file:` パスを再確認、JSON エラーの場合はカンマを直すかバックアップを復元します。
-
-**5. そのホストを完全に終了して再起動し、Apply** — 上のステップ 3 とステップ 4 です。カードはセッションタイトルの横に現れます。そのホストでのみ **Apply**（または `/purge apply`）をクリック。カードが無ければ、おそらく別の `.dsh` を編集しています — 手順 1 に戻ってください。
-
-</details>
-
-**アンインストール。** セッションタイトル横の **dsh-purge-safe** → **Clean** → **Uninstall**。ダイアログを確認: 適用済みパッチを元に戻し、元の Harness を復元し、現在のホストを再起動します。無効化やアンインストールは、まだ `redteam` を指しているエージェントプリセットのデフォルトも `standard` に戻すので、プリセットが消えた後もホストはセッションを作成できます。
-
-<details>
-<summary><strong>アンインストールのコマンドと設定</strong></summary>
-
-```sh
-# またはターミナル / チャットから
-dsh-purge-safe --uninstall
-# /purge uninstall
-```
-
-プラグイン設定は `cordis.patch.yml` にあります（`postPrompt` はデフォルトで空）:
-
-```yaml
-- insert:
-    - id: dsh-purge-safe
-      name: 'dsh-purge-safe'
-      config:
-        enabled: true
-        autoApplyOnStart: true
-        autoUpdateOnStart: false
-        autoRevertOnMissing: false
-        verbose: false
-        postPromptOrder: 5100
-        postPrompt: ""
-```
-
-</details>
+アンインストールは **Clean → Uninstall** または `/purge uninstall` です。このアーカイブはローカルインストール用で、リモートリポジトリのインストール先を含みません。
 
 ---
 
@@ -385,7 +192,7 @@ dsh-purge-safe --edit
 purge_status   purge_apply   purge_revert
 ```
 
-Apply が成功すると、パッチ済みパッケージを読み込むためホストが再起動します。手動で **Restart** をクリックすることもできます。パッチタイトルの下に安定版とテスト版があります。テスト版は `beta` ブランチに追従します。**Switch to stable** は `main` をインストールしてピンを解除します。古い安定版を選ぶとそれがピン留めされます。最新に戻すには **Update** をクリック。古いテストタグは一覧されません。
+Apply が成功すると、変更済みのパッケージを読み込むためホストが再起動します。**Restart** も利用できます。このローカル固定版では、オンライン更新、チャンネル切り替え、ダウンロードによるロールバックは無効です。
 
 コンポーザの **Undo once** と **Undo last round** は現在の会話内に留まり、ブランチを開きません。送信した行が入力に戻り、そのカットですでに送信されたメッセージと完了したタスクは現在の会話から外れます。編集して **再送信** します。rewind の範囲は最初のユーザーメッセージではなく **現在のターン** に従います。`/rewind` も同じ動作です。
 
@@ -525,14 +332,14 @@ Community Desktop はメンテナンスされていません。
 
 ## リリース
 
-過去のパッケージは GitHub [Releases](https://github.com/CallMeGuLab/dsh-purge-safe/releases) から取得できます。オリジナルビルドの転売は禁止です。フォークは帰属表示が必須で、第三者の改変版は本リポジトリとは無関係です。
+最新の更新内容は [release-notes.md](./release-notes.md) を参照してください。更新は新しいローカルアーカイブへの置き換えで行います。著作権と帰属表示は [NOTICE](./NOTICE) に記載されています。
 
 ## 備考
 
 - 対象範囲は、ローカルの `@deepseek-ai/*` パッケージ内のレンダリング済みコピー、デフォルト、ランタイムロジック、および harness ホーム以下のオーバーライドファイルとルールセットです。
 - アップグレード後、マッチしないオリジナルは skipped と表示されます。Apply はなお完了し、それらのファイルは変更されません。
 - `@deepseek-ai` 外のサードパーティプラグインの *ソースリポジトリ* には手を付けません（CMD サイレンスは、インストール済みの doctor / market / liangshen / mnemon を実行時に **ベストエフォートで** パッチすることがあります）。
-- GitHub tarball からインストールしてください（名前は npm にありません。プラグインマーケットはスキップ）。`dsh` あり: `dsh plugin --profile web add https://codeload.github.com/CallMeGuLab/dsh-purge-safe/tar.gz/refs/heads/main`。pnpm のみ: `$DSH_HOME/profiles/web` 内でその URL を `pnpm add`。EXE には `desktop` を使用。このリポジトリからは `add .`。
+- 展開したローカルディレクトリから[インストール](#インストール)してください。Web とデスクトップは別々のプロファイルを使用します。
 
 ---
 
