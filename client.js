@@ -301,7 +301,7 @@ function useWorkbenchFullscreen(React, elementRef, options = {}) {
 const PRODUCT_THEME_KEY = "dsh-purge-safe-ui-theme";
 const PRODUCT_THEME_EVENT = "dsh-purge-safe-ui-theme-change";
 const PRODUCT_THEME_MODES = Object.freeze(["dusk", "white", "system"]);
-const PRODUCT_THEME_DEFAULT = "dusk";
+const PRODUCT_THEME_DEFAULT = "system";
 
 function productThemeWindow(options) {
 	if (options && Object.prototype.hasOwnProperty.call(options, "window")) return options.window;
@@ -322,6 +322,23 @@ function productThemeMode(value) {
 	return PRODUCT_THEME_MODES.includes(value) ? value : "";
 }
 
+function productThemeMedia(options = {}) {
+	const win = productThemeWindow(options);
+	try {
+		if (!win || typeof win.matchMedia !== "function") return "";
+		const media = win.matchMedia("(prefers-color-scheme: dark)");
+		if (!media || typeof media.matches !== "boolean") return "";
+		return media.matches ? "dusk" : "white";
+	} catch { /* restricted webviews may throw */ }
+	return "";
+}
+
+function productThemeBooleanAttribute(target, name) {
+	if (!target || !target.hasAttribute?.(name)) return false;
+	const value = String(target.getAttribute?.(name) ?? "").trim().toLowerCase();
+	return !["false", "0", "off", "no"].includes(value);
+}
+
 function productThemeHost(options = {}) {
 	const win = productThemeWindow(options);
 	const doc = productThemeDocument(options, win);
@@ -329,7 +346,7 @@ function productThemeHost(options = {}) {
 	try {
 		for (const target of targets) {
 			if (!target) continue;
-			if (target.hasAttribute?.("data-ds-dark-theme") || target.hasAttribute?.("dark")) return "dusk";
+			if (productThemeBooleanAttribute(target, "data-ds-dark-theme") || productThemeBooleanAttribute(target, "dark")) return "dusk";
 			const attr = String(target.getAttribute?.("data-theme") || "").toLowerCase();
 			if (attr === "dusk" || attr === "dark") return "dusk";
 			if (attr === "white" || attr === "light") return "white";
@@ -345,15 +362,18 @@ function productThemeHost(options = {}) {
 			|| (computed && (computed.colorScheme || computed.getPropertyValue?.("color-scheme")))
 			|| "",
 		).toLowerCase();
-		if (scheme.includes("dark")) return "dusk";
-		if (scheme.includes("light")) return "white";
+		const schemes = scheme.split(/\s+/).filter(Boolean);
+		if (schemes.includes("dark") && schemes.includes("light")) {
+			const media = productThemeMedia({ ...options, window: win, document: doc });
+			if (media) return media;
+			return schemes[0] === "dark" ? "dusk" : "white";
+		}
+		if (schemes.includes("dark")) return "dusk";
+		if (schemes.includes("light")) return "white";
 	} catch { /* host inspection is best effort */ }
 
-	try {
-		if (win && typeof win.matchMedia === "function" && win.matchMedia("(prefers-color-scheme: dark)").matches) {
-			return "dusk";
-		}
-	} catch { /* restricted webviews may throw */ }
+	const media = productThemeMedia({ ...options, window: win, document: doc });
+	if (media) return media;
 	return "white";
 }
 
@@ -389,9 +409,10 @@ function createProductTheme(options = {}) {
 	};
 
 	const host = () => productThemeHost({ ...options, window: win, document: doc });
+	const system = () => productThemeMedia({ ...options, window: win, document: doc }) || host();
 	const read = () => {
 		const selected = mode();
-		return selected === "system" ? host() : selected;
+		return selected === "system" ? system() : selected;
 	};
 
 	const notify = () => {
@@ -533,6 +554,11 @@ const productTheme = createProductTheme();
 
 		const name = "dsh-purge-safe";
 		const inject = ["slots", "locale"];
+		function fullscreenPortalHost() {
+			return document.fullscreenElement
+				|| document.querySelector('.dshp-dock[data-fullscreen="true"],.rt-full[data-fullscreen="true"]')
+				|| document.body;
+		}
 		const NS = "settings.dsh-purge-safe";
 		let translate = (key) => key;
 		function useT() {
@@ -757,9 +783,27 @@ const productTheme = createProductTheme();
 			"envGate.skipYes": "确认暂不配置",
 			"envGate.go": "去环境适配",
 			"theme.aria": "外观",
+				"theme.dark": "深色",
+				"theme.light": "浅色",
+				"theme.system": "跟随系统",
 			"theme.white": "白",
 			"theme.ink": "墨",
 			"purge.title": "补丁",
+				"clean.workspace": "清洗工作台",
+				"clean.description": "查看本机状态，集中管理补丁与配置。",
+				"clean.patches": "补丁明细",
+				"clean.patchesHint": "按分类查看适用项目和当前状态。",
+				"studio.nav.patches": "版本、补丁与备份",
+				"studio.nav.prompt": "编辑正文与恢复默认",
+				"studio.nav.servers": "维护主机和 IP 名单",
+				"studio.nav.rules": "工作区策略与规则模板",
+				"studio.nav.skills": "宿主目录与技能导入",
+				"clean.progress": "已写入补丁占比",
+				"clean.metricPatches": "补丁写入",
+				"clean.metricShim": "脚本状态",
+				"clean.metricBackup": "恢复备份",
+				"clean.promptHint": "编辑完整提示词，保存后按原有流程生效。",
+				"clean.serversHint": "维护自己的服务器名单与说明。",
 			"override.title": "提示词",
 			"own.title": "自己的服务器",
 			"own.hint": "每行一个 IP 或完整主机名。可以写成 账号@主机，账号只用来认出这种写法。主机名会连同它当时解析出的地址一起放行。不要写密钥、密码、网段。",
@@ -1107,9 +1151,27 @@ const productTheme = createProductTheme();
 			"envGate.skipYes": "Continue without tools",
 			"envGate.go": "Open Env adapt",
 			"theme.aria": "Appearance",
+				"theme.dark": "Dark",
+				"theme.light": "Light",
+				"theme.system": "Follow system",
 			"theme.white": "Light",
 			"theme.ink": "Ink",
 			"purge.title": "Patches",
+				"clean.workspace": "Cleanup workspace",
+				"clean.description": "Review local status and manage patches and configuration.",
+				"clean.patches": "Patch details",
+				"clean.patchesHint": "Review applicable items and current state by category.",
+				"studio.nav.patches": "Version, patches & backup",
+				"studio.nav.prompt": "Edit body and restore default",
+				"studio.nav.servers": "Maintain host and IP list",
+				"studio.nav.rules": "Workspace policy and rule templates",
+				"studio.nav.skills": "Host directory and skill import",
+				"clean.progress": "Patches written",
+				"clean.metricPatches": "Patch status",
+				"clean.metricShim": "Script status",
+				"clean.metricBackup": "Recovery backup",
+				"clean.promptHint": "Edit the full prompt. Saved changes follow the existing activation flow.",
+				"clean.serversHint": "Maintain your own server list and notes.",
 			"override.title": "Prompt",
 			"own.title": "Own servers",
 			"own.hint": "One IP or exact hostname per line. account@host is accepted; the account only identifies that host. A hostname also allows the addresses it resolves to. Do not enter a key, a password, or a range.",
@@ -1555,14 +1617,7 @@ body[data-ds-dark-theme] .dshp-restart-card .dshp-btn-primary,body[data-ds-dark-
 .dshp-dock-tab:hover{color:var(--dsw-alias-label-primary,var(--dshp-ink,#f2f2f2))}
 .dshp-dock-tab.on{color:var(--dsw-alias-label-primary,var(--dshp-ink,#f2f2f2));font-weight:600;border-bottom-color:var(--dsw-alias-brand-primary,#6dbf8c);background:transparent}
 .dshp-dock-body{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:transparent;border-radius:0 0 12px 12px}
-.dshp-dock-body .dshp-root{max-width:none;height:100%;flex:1;min-height:0;overflow:auto;background:transparent!important;--dshp-bg:transparent;--dshp-paper:color-mix(in srgb,var(--dshp-ink) 7%,transparent);--dshp-fill:color-mix(in srgb,var(--dshp-ink) 6%,transparent);--dshp-line:color-mix(in srgb,var(--dshp-ink) 20%,transparent);--dshp-accent-soft:color-mix(in srgb,var(--dshp-accent) 22%,transparent)}
-.dshp-dock-body .dshp-panel,.dshp-dock-body .dshp-metric,.dshp-dock-body .dshp-group,.dshp-dock-body .dshp-editor,.dshp-dock-body .dshp-active,.dshp-dock-body .dshp-ask,.dshp-dock-body .dshp-create,.dshp-dock-body .dshp-rulelist,.dshp-dock-body .dshp-table,.dshp-dock-body .dshp-ruleitem,.dshp-dock-body .dshp-cwd-list,.dshp-dock-body .dshp-cwd-item{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#f7f4ee) 74%,transparent)!important;border-color:color-mix(in srgb,var(--dsw-alias-brand-primary,#6d8f78) 32%,transparent)!important;color:var(--dshp-ink)!important;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 32%,transparent);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
-.dshp-dock-body .dshp-field,.dshp-dock-body .dshp-area{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 88%,transparent)!important;color:var(--dshp-ink)!important;border-color:color-mix(in srgb,var(--dsw-alias-border-l1,#8a8478) 72%,transparent)!important}
-.dshp-dock-body select.dshp-field,.dshp-dock-body .dshp-field.dshp-ver{background:var(--dsw-alias-bg-layer-1,#fff)!important;color:var(--dshp-ink)!important;color-scheme:inherit}
-.dshp-dock[data-theme="white"] select.dshp-field option,.dshp-dock[data-theme="white"] .dshp-field.dshp-ver option{background:#fff;color:#16140f}
-.dshp-dock[data-theme="dusk"] select.dshp-field option,.dshp-dock[data-theme="dusk"] .dshp-field.dshp-ver option{background:#1b1d22;color:#f4f1ea}
-.dshp-dock-body .dshp-title,.dshp-dock-body .dshp-sub h4,.dshp-dock-body .dshp-group-h strong,.dshp-dock-body .dshp-metric b,.dshp-dock-body .dshp-rule-name{font-family:inherit;font-weight:650;letter-spacing:0;color:var(--dshp-ink)!important;text-shadow:none}
-.dshp-dock-body .dshp-mute,.dshp-dock-body .dshp-kicker,.dshp-dock-body .dshp-metric span,.dshp-dock-body .dshp-group-h em,.dshp-dock-body .dshp-count,.dshp-dock-body .dshp-rule-meta,.dshp-dock-body .dshp-hint{color:var(--dshp-mute)!important;font-weight:500;text-shadow:none}
+.dshp-dock-body .dshp-root{max-width:none;height:100%;flex:1;min-height:0;overflow:auto;background:transparent!important}
 .dshp-dock-body .rt-dock{position:relative;inset:auto;width:100%!important;height:100%;max-width:none!important;flex:1;min-height:0;min-width:0;display:flex!important;flex-direction:column;box-shadow:none;border:0;transform:none!important;opacity:1!important;pointer-events:auto!important;background:transparent!important}
 .dshp-dock-body .rt-grip{display:none!important}
 .dshp-dock-body .rt-embedded>.rt-head,.dshp-dock-body .rt-tabs,.dshp-dock-body .rt-foot{flex:none}
@@ -1574,7 +1629,6 @@ body[data-ds-dark-theme] .dshp-restart-card .dshp-btn-primary,body[data-ds-dark-
 .dshp-dock-body .rt-tabs{gap:2px;padding:6px 10px 0;flex-wrap:wrap}
 .dshp-dock-body .rt-tab{border-radius:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:8px 9px 7px;background:transparent;font-size:14px}
 .dshp-dock-body .rt-tab.on{border-bottom-color:var(--dsw-alias-brand-primary,#6d8f78);background:transparent;font-weight:650}
-.dshp-dock-body .rt-row:hover,.dshp-dock-body .rt-item:hover,.dshp-dock-body .rt-item.on,.dshp-dock-body .rt-seg:hover,.dshp-dock-body .rt-seg.on,.dshp-dock-body .rt-vrow:hover,.dshp-dock-body .rt-score-row:hover{background:var(--rt-surf-2)!important}
 body:not([data-ds-dark-theme]) .dshp-auth-modal{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fffcf7) 92%,transparent);color:var(--dsw-alias-label-primary,#1a1916);border-color:color-mix(in srgb,var(--dsw-alias-border-l1,#c9c3b6) 80%,transparent);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3)}
 body:not([data-ds-dark-theme]) .dshp-auth-legal{background:color-mix(in srgb,var(--dsw-alias-bg-layer-2,#f3f0e8) 90%,transparent);color:var(--dsw-alias-label-primary,#1a1916);border-color:color-mix(in srgb,var(--dsw-alias-border-l1,#c9c3b6) 80%,transparent)}
 body:not([data-ds-dark-theme]) .dshp-auth-warn{background:color-mix(in srgb,#f5e6c8 88%,transparent);color:#6b4a10}
@@ -1609,25 +1663,8 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 .dshp-hero-chip-btn.on,.dshp-tab-btn.on{border-color:color-mix(in srgb,currentColor 38%,transparent)}
 /* 玻璃跟随宿主颜色。字重和底的不透明度分开：壳透，字坐在更实的一层上。 */
 .dshp-dock{font-family:"Segoe UI","Microsoft YaHei UI","PingFang SC","Noto Sans SC",system-ui,sans-serif;font-size:14px;line-height:1.6;font-weight:500;-webkit-font-smoothing:antialiased;text-shadow:none}
-.dshp-dock[data-theme="white"],.dshp-dock[data-theme="dusk"]{background:linear-gradient(165deg,color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 50%,transparent),color-mix(in srgb,var(--dsw-alias-brand-primary,#6d8f78) 18%,transparent) 46%,color-mix(in srgb,var(--dsw-alias-bg-layer-2,#fff) 28%,transparent))!important;backdrop-filter:blur(26px) saturate(1.45)!important;-webkit-backdrop-filter:blur(26px) saturate(1.45)!important;color:var(--dshp-ink)!important;border:1px solid color-mix(in srgb,var(--dsw-alias-brand-primary,#6d8f78) 36%,transparent)!important;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 42%,transparent),0 18px 44px color-mix(in srgb,#000 18%,transparent)!important}
-.dshp-dock[data-theme="dusk"]{--dshp-ink:var(--dsw-alias-label-primary,#f4f1ea);--dshp-mute:color-mix(in srgb,var(--dsw-alias-label-primary,#f4f1ea) 84%,var(--dsw-alias-label-secondary,#c9c3b8))}
-.dshp-dock[data-theme="white"]{--dshp-ink:var(--dsw-alias-label-primary,#16140f);--dshp-mute:color-mix(in srgb,var(--dsw-alias-label-primary,#16140f) 76%,var(--dsw-alias-label-secondary,#3c362e))}
-.dshp-dock .dshp-dock-head,.dshp-dock .dshp-dock-tabs{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,transparent) 28%,transparent)!important;color:var(--dshp-ink)!important}
-.dshp-dock .dshp-dock-head,.dshp-dock .dshp-dock-head b,.dshp-dock .dshp-dock-head button,.dshp-dock .dshp-dock-tab,.dshp-dock .dshp-dock-tab.on{color:var(--dshp-ink)!important;text-shadow:none!important;font-weight:600}
 .dshp-dock .dshp-dock-tab{font-size:14px}
-.dshp-dock .dshp-dock-tab.on{border-bottom-color:var(--dsw-alias-brand-primary,#6d8f78)!important}
-.dshp-dock-body .rt-dock{font-size:14px!important;line-height:1.6!important;font-weight:500!important;color:var(--dshp-ink)!important;--rt-ink:var(--dshp-ink);--rt-mute:var(--dshp-mute);--rt-surf:color-mix(in srgb,var(--dsw-alias-bg-layer-2,var(--dsw-alias-bg-layer-1,#fff)) 40%,transparent);--rt-surf-2:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 62%,transparent);--rt-line:color-mix(in srgb,var(--dsw-alias-brand-primary,#6d8f78) 30%,transparent)}
-.dshp-dock-body .rt-title,.dshp-dock-body .rt-tab,.dshp-dock-body .rt-tab.on,.dshp-dock-body .rt-card,.dshp-dock-body .rt-card h4,.dshp-dock-body .rt-row,.dshp-dock-body .rt-vrow,.dshp-dock-body .rt-kv,.dshp-dock-body .rt-kv b,.dshp-dock-body .rt-kv span,.dshp-dock-body .rt-mono,.dshp-dock-body .rt-empty,.dshp-dock-body .rt-foot,.dshp-dock-body .rt-tag,.dshp-dock-body .rt-item,.dshp-dock-body .rt-item-name,.dshp-dock-body .rt-item-desc,.dshp-dock-body .rt-sec-sub,.dshp-dock-body .rt-kb-sub,.dshp-dock-body .rt-seg-cidr,.dshp-dock-body .rt-seg-meta,.dshp-dock-body .rt-section,.dshp-dock-body .rt-note,.dshp-dock-body .rt-hint{color:var(--dshp-ink)!important;text-shadow:none!important;opacity:1!important}
-.dshp-dock-body .rt-tab,.dshp-dock-body .rt-foot,.dshp-dock-body .rt-empty,.dshp-dock-body .rt-item-desc,.dshp-dock-body .rt-kb-sub,.dshp-dock-body .rt-kv span,.dshp-dock-body .rt-tag,.dshp-dock-body .rt-sec-sub{color:var(--dshp-mute)!important}
-.dshp-dock-body .rt-card,.dshp-dock-body .rt-pane,.dshp-dock-body .rt-side,.dshp-dock-body .rt-table,.dshp-dock-body .rt-toolbar,.dshp-dock-body .rt-embedded>.rt-head,.dshp-dock-body .rt-tabs{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 72%,transparent)!important;border-color:color-mix(in srgb,var(--dsw-alias-brand-primary,#6d8f78) 28%,transparent)!important;color:var(--dshp-ink)!important;box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 26%,transparent)!important;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
-.dshp-dock-body .rt-btn,.dshp-dock-body .rt-input,.dshp-dock-body .rt-eng-select,.dshp-dock-body textarea.rt-input{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 90%,transparent)!important;color:var(--dshp-ink)!important;border-color:color-mix(in srgb,var(--dsw-alias-border-l1,#888) 70%,transparent)!important}
-.dshp-dock-body .rt-btn-primary{background:var(--dsw-alias-brand-primary,#3f6b52)!important;border-color:var(--dsw-alias-brand-primary,#3f6b52)!important;color:#fff!important}
-.dshp-dock[data-theme="white"] .dshp-dock-body .rt-eng-select option,.dshp-dock[data-theme="white"] .dshp-dock-body .rt-input option{background:#fff;color:#16140f}
-.dshp-dock[data-theme="dusk"] .dshp-dock-body .rt-eng-select option,.dshp-dock[data-theme="dusk"] .dshp-dock-body .rt-input option{background:#1b1d22;color:#f4f1ea}
 .dshp-dock-body .rt-err{font-weight:650}
-.dshp-dock[data-theme="white"] .dshp-dock-body .rt-err{color:#9a3434!important}
-.dshp-dock[data-theme="dusk"] .dshp-dock-body .rt-err{color:#f0b4b4!important}
-.dshp-dock-body .rt-rep-http,.dshp-dock-body pre{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1,#fff) 84%,transparent)!important;color:var(--dshp-ink)!important;border:1px solid color-mix(in srgb,var(--dsw-alias-border-l1,#888) 60%,transparent)!important}
 /* __DSH_PRODUCT_SHELL_BEGIN__ */
 /* One product palette for the outer frame, clean workspace, drill and dialogs.
  * Component styles consume these tokens; they do not define local palettes. */
@@ -1653,6 +1690,7 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
   --ui-warning-bg:#fcf4e4;
   --ui-danger:#b63f3f;
   --ui-danger-bg:#fbeeed;
+  --ui-on-danger:#ffffff;
   --ui-radius-control:9px;
   --ui-radius-panel:16px;
   --ui-control-height:34px;
@@ -1709,7 +1747,7 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
     --ui-line:#344253;--ui-line-strong:#52657b;--ui-text:#e9f0f8;--ui-muted:#a5b3c5;
     --ui-link:#9ac3ff;--ui-selected:#243c5c;--ui-selected-text:#bed9ff;--ui-nav:#141c26;
     --ui-success:#82c7a4;--ui-success-bg:#1d342b;--ui-warning:#dfbd78;--ui-warning-bg:#382f20;
-    --ui-danger:#f0a3a2;--ui-danger-bg:#3a2529;
+    --ui-danger:#f0a3a2;--ui-danger-bg:#3a2529;--ui-on-danger:#25161b;
     --ui-feature-surface:#18304c;--ui-feature-line:#3b5e86;--ui-feature-text:#f0f6ff;--ui-feature-muted:#aec7e8;--ui-feature-hover:#234568;
     --ui-panel-shadow:0 5px 16px rgb(0 0 0 / .14);
     --ui-glass-surface:rgb(22 48 66 / .68);
@@ -1734,7 +1772,7 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
   --ui-line:#344253;--ui-line-strong:#52657b;--ui-text:#e9f0f8;--ui-muted:#a5b3c5;
   --ui-link:#9ac3ff;--ui-selected:#243c5c;--ui-selected-text:#bed9ff;--ui-nav:#141c26;
   --ui-success:#82c7a4;--ui-success-bg:#1d342b;--ui-warning:#dfbd78;--ui-warning-bg:#382f20;
-  --ui-danger:#f0a3a2;--ui-danger-bg:#3a2529;
+  --ui-danger:#f0a3a2;--ui-danger-bg:#3a2529;--ui-on-danger:#25161b;
   --ui-feature-surface:#18304c;--ui-feature-line:#3b5e86;--ui-feature-text:#f0f6ff;--ui-feature-muted:#aec7e8;--ui-feature-hover:#234568;
   --ui-panel-shadow:0 5px 16px rgb(0 0 0 / .14);
 
@@ -1759,7 +1797,7 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
   --ui-line:#d8e1ed;--ui-line-strong:#a3b5cc;--ui-text:#1b2b40;--ui-muted:#43566d;
   --ui-link:#285fbb;--ui-selected:#e6effd;--ui-selected-text:#204f9b;--ui-nav:#ffffff;
   --ui-success:#237650;--ui-success-bg:#e9f5ee;--ui-warning:#8e641a;--ui-warning-bg:#fcf4e4;
-  --ui-danger:#b63f3f;--ui-danger-bg:#fbeeed;
+  --ui-danger:#b63f3f;--ui-danger-bg:#fbeeed;--ui-on-danger:#ffffff;
   --ui-feature-surface:#193858;--ui-feature-line:#45698e;--ui-feature-text:#f0f6ff;--ui-feature-muted:#bed2ea;--ui-feature-hover:#254c73;
   --ui-panel-shadow:0 4px 14px rgb(27 43 64 / .04);
 
@@ -1853,6 +1891,10 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 }
 
 /* Older skins cannot reset native widgets to a different scheme. */
+:is(.dshp-dock,.dshp-root,.rt-dock,.rt-full) select option {
+  background:var(--ui-surface);
+  color:var(--ui-text);
+}
 :is(.dshp-dock,.dshp-root,.dshp-auth-mask,.dshp-modal-bg,.dshp-restart-mask,.rt-dock,.rt-full){color-scheme:var(--ui-scheme)!important;}
 
 
@@ -1891,6 +1933,7 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
   --dshp-warn: var(--ui-warning);
   --dshp-warn-soft: var(--ui-warning-bg);
   --dshp-bad: var(--ui-danger);
+  --dshp-danger: var(--ui-danger);
   --dshp-danger-soft: var(--ui-danger-bg);
   --dshp-secondary: var(--ui-subtle);
   --dshp-detail: var(--ui-canvas);
@@ -1931,6 +1974,7 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
   line-height:var(--ui-leading-body);
 }
 .dshp-dock-head{
+  color:var(--ui-text);
   min-height:46px;
   padding:0 var(--ui-space-4);
   background:var(--dshp-paper);
@@ -2635,6 +2679,56 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
   .dshp-attn-capsule:hover,.dshp-attn-capsule:focus-within{width:auto}
 }
 
+/* AttentionToast is portaled to body.  Keep the original product-shell theme
+ * scope on the portal host so its controls use the same type, radius, and
+ * semantic colors as the cleaning workspace and drill shell. */
+.dshp-attn-portal{display:contents;max-width:none;padding:0;background:transparent;color:var(--dshp-ink);font-family:var(--dshp-sans);font-size:var(--ui-text-body);line-height:var(--ui-leading-body)}
+.dshp-attn-portal .dshp-attn-capsule{
+  border-color:var(--dshp-line);
+  border-radius:var(--ui-radius-control);
+  background:var(--dshp-paper);
+  box-shadow:var(--ui-glass-shadow);
+  color:var(--dshp-ink);
+  font-family:var(--dshp-sans);
+  font-size:var(--ui-text-control);
+  line-height:var(--ui-leading-body);
+}
+.dshp-attn-portal .dshp-attn-capsule:hover,
+.dshp-attn-portal .dshp-attn-capsule:focus-within{
+  border-radius:var(--ui-radius-panel);
+  box-shadow:var(--ui-glass-shadow);
+}
+.dshp-attn-portal .dshp-attn-capsule.is-urgent,
+.dshp-attn-portal .dshp-attn-capsule.is-urgent:hover{border-color:var(--dshp-bad)}
+.dshp-attn-portal .dshp-attn-capsule.is-dragging:hover,
+.dshp-attn-portal .dshp-attn-capsule.is-dragging:focus-within,
+.dshp-attn-portal .dshp-attn-capsule.no-expand:hover,
+.dshp-attn-portal .dshp-attn-capsule.no-expand:focus-within{border-radius:var(--ui-radius-control);box-shadow:var(--ui-glass-shadow)}
+.dshp-attn-portal .dshp-attn-capsule-trigger{border-radius:var(--ui-radius-control);color:var(--dshp-ink);font:inherit}
+.dshp-attn-portal .dshp-attn-capsule-dot{background:var(--dshp-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--dshp-primary) 22%,transparent)}
+.dshp-attn-portal .dshp-attn-capsule.is-urgent .dshp-attn-capsule-dot{background:var(--dshp-bad);box-shadow:0 0 0 3px color-mix(in srgb,var(--dshp-bad) 22%,transparent)}
+.dshp-attn-portal .dshp-attn-capsule-title{font-size:var(--ui-text-control);font-weight:600}
+.dshp-attn-portal .dshp-attn-capsule-count{border-radius:var(--dshp-control-radius);background:var(--dshp-primary);color:var(--dshp-primary-ink);font-size:var(--ui-text-label)}
+.dshp-attn-portal .dshp-attn-capsule.is-urgent .dshp-attn-capsule-count{background:var(--dshp-bad);color:var(--ui-on-danger,var(--dshp-primary-ink))}
+.dshp-attn-portal .dshp-attn-capsule-x{border-radius:var(--dshp-control-radius);color:var(--dshp-mute);font-size:var(--ui-text-section)}
+.dshp-attn-portal .dshp-attn-capsule-x:hover{background:var(--dshp-hover);color:var(--dshp-ink)}
+.dshp-attn-portal .dshp-attn-capsule-list,
+.dshp-attn-portal .dshp-attn-capsule-row,
+.dshp-attn-portal .dshp-attn-capsule-rest,
+.dshp-attn-portal .dshp-attn-capsule-foot{border-color:var(--dshp-line)}
+.dshp-attn-portal .dshp-attn-capsule-stage,
+.dshp-attn-portal .dshp-attn-capsule-need{border-color:var(--dshp-line);border-radius:var(--dshp-control-radius);background:var(--dshp-fill);color:var(--dshp-mute);font-size:var(--ui-text-label)}
+.dshp-attn-portal .dshp-attn-capsule.is-urgent .dshp-attn-capsule-stage{color:var(--dshp-bad)}
+.dshp-attn-portal .dshp-attn-capsule-who{color:var(--dshp-ink);font-size:var(--ui-text-control)}
+.dshp-attn-portal .dshp-attn-capsule-reason,
+.dshp-attn-portal .dshp-attn-capsule-rest{color:var(--dshp-mute);font-size:var(--ui-text-helper)}
+.dshp-attn-portal .dshp-attn-capsule-go,
+.dshp-attn-portal .dshp-attn-capsule-later{min-height:var(--dshp-control-height);border-color:var(--dshp-line);border-radius:var(--dshp-control-radius);background:var(--dshp-paper);color:var(--dshp-ink);font:inherit;font-size:var(--ui-text-control)}
+.dshp-attn-portal .dshp-attn-capsule-go{border-color:var(--dshp-primary);background:var(--dshp-primary);color:var(--dshp-primary-ink)}
+.dshp-attn-portal .dshp-attn-capsule-go:hover,
+.dshp-attn-portal .dshp-attn-capsule-later:hover{border-color:var(--dshp-line-strong);background:var(--dshp-hover);color:var(--dshp-ink)}
+.dshp-attn-portal .dshp-attn-capsule-go:hover{background:var(--dshp-primary-hover);border-color:var(--dshp-primary-hover);color:var(--dshp-primary-ink)}
+
 
 /* Glass is a material layer; layout, semantic colours and interactions stay
  * owned by the existing components. No host content is used as a backdrop. */
@@ -2662,6 +2756,7 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 :is(.rt-dock.rt-studio:not(.rt-embedded),.rt-full.rt-studio) {
   background-color:var(--ui-water-base) !important;
   background-image:var(--ui-water-backdrop) !important;
+  color:var(--ui-text) !important;
   background-size:auto,auto,1400px 1000px,auto,auto;
   background-position:center,center,center top,center,center;
   border-color:var(--ui-glass-edge);
@@ -2824,7 +2919,8 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 :is(.rt-dock.rt-studio,.rt-full.rt-studio) .rt-ov-score-feature {
   background:
     radial-gradient(ellipse at 0% 0%,rgb(157 222 255 / .19),transparent 68%),
-    linear-gradient(120deg,rgb(48 103 159 / .5),rgb(21 58 91 / .88));
+    linear-gradient(120deg,rgb(48 103 159 / .5),rgb(21 58 91 / .88)),
+    var(--ui-feature-surface);
   border-color:rgb(176 223 255 / .4);
   box-shadow:var(--ui-glass-shadow),inset 0 0 28px rgb(135 210 255 / .08);
   backdrop-filter:var(--ui-glass-blur);
@@ -3548,10 +3644,11 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 			return node;
 		}
 
-		function PurgifySection() {
+		function PurgifySection(props = {}) {
 			const t = useT();
 			const tRef = useRef(t);
 			tRef.current = t;
+			const studioChapter = props && props.studioChapter ? props.studioChapter : "patches";
 			const [state, setState] = useState(null);
 			const [override, setOverride] = useState("");
 			const [defaultOverride, setDefaultOverride] = useState("");
@@ -3946,49 +4043,147 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 			if (tally.unmatched) metricNotes.push(t("metric.unmatchedShort", { n: tally.unmatched }));
 			if (tally.skipped) metricNotes.push(t("metric.skipShort", { n: tally.skipped }));
 
-			const localVer = (s && s.plugin_version) || (updateInfo && updateInfo.localVersion) || "";
-			return h("section", { className: "dshp-panel", "aria-label": t("purge.title") },
-				h("div", { className: "dshp-head" },
-					h("h3", { className: "dshp-title" }, t("purge.title")),
-					h("span", { className: "dshp-pill" }, t("surface." + hostSurface)),
-				),
-				h("div", { className: "dshp-rel" },
-					h("div", { className: "dshp-now" },
-						h("span", { className: "dshp-now-label" }, t("channel.local")),
-						h("b", { className: "dshp-now-ver" }, localVer ? "v" + localVer : "—"),
-					),
-				),
-				s ? h("div", { className: "dshp-metrics" },
-					h("div", { className: "dshp-metric" },
-						h("b", null, located ? (applied + " / " + total) : (patchesLost ? t("metric.lost.count") : (sealedReady ? t("metric.sealed.count") : t("metric.unlocated.count")))),
-						h("span", null, !located ? (patchesLost ? t("metric.lost") : (sealedReady ? t("metric.sealed") : t("metric.unlocated"))) : (metricNotes.length ? metricNotes.join(" · ") : t("metric.purged"))),
-					),
-					h("div", { className: "dshp-metric" },
-						h("b", { style: { fontSize: 13, fontFamily: "var(--dshp-mono)", fontWeight: 500 } },
-							h("span", { className: "dshp-pill is-" + shimKind(s.shim_cmd) }, "cmd"),
-							" ",
-							h("span", { className: "dshp-pill is-" + shimKind(s.shim_ps1) }, "ps1"),
-							" ",
-							h("span", { className: "dshp-pill is-" + shimKind(s.shim_bin || "missing") }, "unix"),
+			const localVer = s && typeof s.plugin_version === "string" ? s.plugin_version.trim() : ((updateInfo && updateInfo.localVersion) || "");
+			return h("section", { className: "dshp-clean-page dshp-studio-purgify", "aria-label": t("purge.title") },
+				h("div", {
+					className: "dshp-studio-chapter dshp-studio-patches",
+					id: "dshp-studio-panel-patches",
+					"data-studio-chapter": "patches",
+					hidden: studioChapter !== "patches",
+					"aria-hidden": studioChapter !== "patches",
+				},
+					h("header", { className: "dshp-clean-heading" },
+						h("div", null,
+							h("div", { className: "dshp-kicker" }, t("purge.title")),
+							h("h3", { className: "dshp-title" }, t("clean.workspace")),
+							h("p", { className: "dshp-clean-description" }, t("clean.description")),
 						),
-						h("span", null, (s.shim_cmd === "n/a" && s.shim_ps1 === "n/a" && (s.shim_bin === "n/a" || !s.shim_bin)) ? t("metric.shim.na") : t("metric.shim")),
+						h("div", { className: "dshp-clean-version" },
+							h("span", { className: "dshp-pill" }, t("surface." + hostSurface)),
+							h("div", { className: "dshp-now" },
+								h("span", { className: "dshp-now-label" }, t("channel.local")),
+								h("b", { className: "dshp-now-ver" }, localVer ? "v" + localVer : "—"),
+								h("em", { className: "dshp-now-mark" }, t("update.current")),
+							),
+						),
 					),
-					h("div", { className: "dshp-metric" },
-						h("b", null, s.has_backup ? t("metric.bak.yes") : t("metric.bak.no")),
-						h("span", null, t("metric.bak.hint")),
+					h("div", { className: "dshp-clean-overview" },
+						s ? h("div", { className: "dshp-metrics" },
+							h("div", { className: "dshp-metric" },
+								h("small", { className: "dshp-clean-metric-label" }, t("clean.metricPatches")),
+								h("b", null, located ? (applied + " / " + total) : (patchesLost ? t("metric.lost.count") : (sealedReady ? t("metric.sealed.count") : t("metric.unlocated.count")))),
+								h("span", null, !located ? (patchesLost ? t("metric.lost") : (sealedReady ? t("metric.sealed") : t("metric.unlocated"))) : (metricNotes.length ? metricNotes.join(" · ") : t("metric.purged"))),
+							),
+							h("div", { className: "dshp-metric" },
+								h("small", { className: "dshp-clean-metric-label" }, t("clean.metricShim")),
+								h("b", { style: { fontSize: 13, fontFamily: "var(--dshp-mono)", fontWeight: 500 } },
+									h("span", { className: "dshp-pill is-" + shimKind(s.shim_cmd) }, "cmd"), " ",
+									h("span", { className: "dshp-pill is-" + shimKind(s.shim_ps1) }, "ps1"), " ",
+									h("span", { className: "dshp-pill is-" + shimKind(s.shim_bin || "missing") }, "unix"),
+								),
+								h("span", null, (s.shim_cmd === "n/a" && s.shim_ps1 === "n/a" && (s.shim_bin === "n/a" || !s.shim_bin)) ? t("metric.shim.na") : t("metric.shim")),
+							),
+							h("div", { className: "dshp-metric" },
+								h("small", { className: "dshp-clean-metric-label" }, t("clean.metricBackup")),
+								h("b", null, s.has_backup ? t("metric.bak.yes") : t("metric.bak.no")),
+								h("span", null, t("metric.bak.hint")),
+							),
+						) : h("div", { className: "dshp-metrics" },
+							h("div", { className: "dshp-metric" }, h("div", { className: "dshp-skel" }), h("div", { className: "dshp-skel", style: { width: "40%" } })),
+							h("div", { className: "dshp-metric" }, h("div", { className: "dshp-skel" }), h("div", { className: "dshp-skel", style: { width: "40%" } })),
+							h("div", { className: "dshp-metric" }, h("div", { className: "dshp-skel" }), h("div", { className: "dshp-skel", style: { width: "40%" } })),
+						),
+						h("div", { className: "dshp-clean-progress" }, h("span", null, t("clean.progress")), h("b", null, located && total ? pct + "%" : "—")),
+						h("div", { className: "dshp-bar", role: "progressbar", "aria-label": t("clean.progress"), "aria-valuemin": 0, "aria-valuemax": 100, "aria-valuenow": located && total ? pct : undefined }, h("i", { style: { width: pct + "%" } })),
 					),
-				) : h("div", { className: "dshp-metrics" },
-					h("div", { className: "dshp-metric" }, h("div", { className: "dshp-skel" }), h("div", { className: "dshp-skel", style: { width: "40%" } })),
-					h("div", { className: "dshp-metric" }, h("div", { className: "dshp-skel" }), h("div", { className: "dshp-skel", style: { width: "40%" } })),
-					h("div", { className: "dshp-metric" }, h("div", { className: "dshp-skel" }), h("div", { className: "dshp-skel", style: { width: "40%" } })),
+					h("div", { className: "dshp-clean-grid" },
+						h("section", { className: "dshp-clean-card dshp-clean-patches", "aria-labelledby": "dshp-clean-patches-title" },
+							h("header", { className: "dshp-clean-card-head" },
+								h("h4", { id: "dshp-clean-patches-title" }, t("clean.patches")),
+								h("p", null, t("clean.patchesHint")),
+							),
+							h("div", { className: "dshp-clean-groups" }, h(PatchGroups, { state: s })),
+							h("div", { className: "dshp-row dshp-clean-actions" },
+								h(Btn, { kind: "primary", disabled: patchBusy || uninstallBusy, onClick: () => doAction("apply", "action.apply") }, patchBusy ? t("btn.apply.busy") : t("btn.apply")),
+								h(Btn, { kind: "danger", disabled: patchBusy || uninstallBusy, onClick: () => doAction("revert", "action.revert") }, t("btn.revert")),
+								h(Btn, { kind: "solid-danger", disabled: patchBusy || uninstallBusy, onClick: () => setAskUninstall(true) }, uninstallBusy ? t("btn.uninstall.busy") : t("btn.uninstall")),
+							),
+							s && s.ai_base && s.override_status === "missing" ? h("p", { className: "dshp-hint", style: { margin: "8px 0 0", color: "var(--dshp-mute)", fontSize: 12 } }, t("warn.noInject")) : null,
+						),
+					),
 				),
-				h("div", { className: "dshp-bar", "aria-hidden": "true" }, h("i", { style: { width: pct + "%" } })),
-				h(PatchGroups, { state: s }),
-				h("div", { className: "dshp-row", style: { marginTop: 14 } },
-					h(Btn, { kind: "primary", disabled: patchBusy || uninstallBusy, onClick: () => doAction("apply", "action.apply") }, patchBusy ? t("btn.apply.busy") : t("btn.apply")),
-					h(Btn, { kind: "danger", disabled: patchBusy || uninstallBusy, onClick: () => doAction("revert", "action.revert") }, t("btn.revert")),
-					h(Btn, { kind: "solid-danger", disabled: patchBusy || uninstallBusy, onClick: () => setAskUninstall(true) }, uninstallBusy ? t("btn.uninstall.busy") : t("btn.uninstall")),
-					noticeNode(notice),
+				notice.text ? h("div", { className: "dshp-clean-feedback", role: "status" }, noticeNode(notice)) : null,
+				h("div", { className: "dshp-clean-config" },
+					h("div", {
+						className: "dshp-studio-chapter dshp-studio-prompt",
+						id: "dshp-studio-panel-prompt",
+						"data-studio-chapter": "prompt",
+						hidden: studioChapter !== "prompt",
+						"aria-hidden": studioChapter !== "prompt",
+					},
+						h("section", { className: "dshp-clean-card dshp-clean-prompt", "aria-labelledby": "dshp-clean-prompt-title" },
+							h("div", { className: "dshp-sub" },
+								h("h4", { id: "dshp-clean-prompt-title" }, t("override.title")),
+								h("div", { className: "dshp-row", style: { margin: 0 } },
+									h(Btn, { kind: "primary", tiny: true, disabled: patchBusy || !overrideLoaded, onClick: saveOverride }, t("btn.saveInject")),
+								h(Btn, { tiny: true, disabled: patchBusy || !overrideLoaded || !defaultOverride, onClick: restoreOverride }, t("btn.restoreInject")),
+							),
+						),
+							h("p", { className: "dshp-clean-description" }, t("clean.promptHint")),
+							h("textarea", {
+								className: "dshp-area",
+								"aria-labelledby": "dshp-clean-prompt-title",
+								ref: promptAreaRef,
+								value: override,
+								onChange: (e) => { promptDirtyRef.current = true; overrideRef.current = e.target.value; setOverride(e.target.value); },
+								spellCheck: false,
+								placeholder: "",
+							}),
+							promptBoxEmpty(override) ? h("p", { className: "dshp-hint", style: { margin: "8px 0 0", color: "var(--dshp-danger, #c44)", fontSize: 12 } }, t("need.prompt")) : null,
+						),
+					),
+					h("div", {
+						className: "dshp-studio-chapter dshp-studio-servers",
+						id: "dshp-studio-panel-servers",
+						"data-studio-chapter": "servers",
+						hidden: studioChapter !== "servers",
+						"aria-hidden": studioChapter !== "servers",
+					},
+						h("section", { className: "dshp-clean-card dshp-clean-servers", "aria-labelledby": "dshp-clean-servers-title" },
+							h("div", { className: "dshp-sub" },
+								h("h4", { id: "dshp-clean-servers-title" }, t("own.title")),
+								h("div", { className: "dshp-row", style: { margin: 0 } },
+									h(Btn, {
+									kind: "primary",
+									tiny: true,
+									disabled: !ownLoaded,
+									onClick: () => {
+										fetch("/dsh-purge-safe/own-servers", {
+											method: "POST",
+											headers: { "content-type": "application/json" },
+											body: JSON.stringify({ content: ownServers }),
+										}).then((r) => r.json()).then((d) => {
+											if (!d || !d.ok) { setNotice({ kind: "error", text: (d && d.error) || t("err.override", { error: "" }) }); return; }
+											if (typeof d.content === "string") setOwnServers(d.content);
+											setNotice({ kind: "ok", text: d.dropped > 0 ? t("saved.own.dropped", { n: d.dropped }) : t("saved.own") });
+										}).catch((e) => setNotice({ kind: "error", text: e.message }));
+									},
+								}, t("own.save")),
+							),
+						),
+							h("p", { className: "dshp-clean-description" }, t("clean.serversHint")),
+							h("textarea", {
+								className: "dshp-area",
+								"aria-labelledby": "dshp-clean-servers-title",
+								value: ownServers,
+								onChange: (e) => setOwnServers(e.target.value),
+								spellCheck: false,
+								rows: 4,
+								style: { minHeight: 96 },
+							}),
+							h("p", { className: "dshp-hint", style: { margin: "8px 0 0", color: "var(--dshp-mute)", fontSize: 12 } }, t("own.hint")),
+						),
+					),
 				),
 				askUninstall ? h("div", {
 					className: "dshp-modal-bg",
@@ -4003,82 +4198,16 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 						h("div", { className: "dshp-modal-ops" },
 							h(Btn, { disabled: uninstallBusy, onClick: () => setAskUninstall(false) }, t("uninstall.cancel")),
 							h(Btn, { kind: "solid-danger", disabled: uninstallBusy, onClick: doUninstall }, t("uninstall.confirm")),
-						),
+					),
 					),
 				) : null,
-				s && s.ai_base && s.override_status === "missing" ? h("p", { className: "dshp-hint", style: { margin: "8px 0 0", color: "var(--dshp-mute)", fontSize: 12 } }, t("warn.noInject")) : null,
 				askRestart ? h(RestartAsk, {
 					t: t,
-					theme: detectHostTheme(),
+					theme: readTheme(),
 					busy: restartBusy,
-					onLater: () => {
-						suppressRestartAsk.current = true;
-						setAskRestart(false);
-					},
-					onRestart: () => {
-						restartDsh(setNotice, setRestartBusy, t, restartSurfaceRef.current || uiSurfaceOf() || hostSurface || "");
-					},
+					onLater: () => { suppressRestartAsk.current = true; setAskRestart(false); },
+					onRestart: () => restartDsh(setNotice, setRestartBusy, t, restartSurfaceRef.current || uiSurfaceOf() || hostSurface || ""),
 				}) : null,
-				// h(ContinueRetrySection, null),
-				h("div", { className: "dshp-sub" },
-					h("h4", null, t("override.title")),
-					h("div", { className: "dshp-row", style: { margin: 0 } },
-						h(Btn, { kind: "primary", tiny: true, disabled: patchBusy || !overrideLoaded, onClick: saveOverride }, t("btn.saveInject")),
-						h(Btn, { tiny: true, disabled: patchBusy || !overrideLoaded || !defaultOverride, onClick: restoreOverride }, t("btn.restoreInject")),
-					),
-				),
-				h("textarea", {
-					className: "dshp-area",
-					ref: promptAreaRef,
-					value: override,
-					onChange: (e) => {
-						promptDirtyRef.current = true;
-						overrideRef.current = e.target.value;
-						setOverride(e.target.value);
-					},
-					spellCheck: false,
-					placeholder: "",
-				}),
-				promptBoxEmpty(override) ? h("p", {
-					className: "dshp-hint",
-					style: { margin: "8px 0 0", color: "var(--dshp-danger, #c44)", fontSize: 12 },
-				}, t("need.prompt")) : null,
-				h("div", { className: "dshp-sub" },
-					h("h4", null, t("own.title")),
-					h("div", { className: "dshp-row", style: { margin: 0 } },
-						h(Btn, {
-							kind: "primary",
-							tiny: true,
-							disabled: !ownLoaded,
-							onClick: () => {
-								fetch("/dsh-purge-safe/own-servers", {
-									method: "POST",
-									headers: { "content-type": "application/json" },
-									body: JSON.stringify({ content: ownServers }),
-								}).then((r) => r.json()).then((d) => {
-									if (!d || !d.ok) {
-										setNotice({ kind: "error", text: (d && d.error) || t("err.override", { error: "" }) });
-										return;
-									}
-									if (typeof d.content === "string") setOwnServers(d.content);
-									setNotice({
-										kind: "ok",
-										text: d.dropped > 0 ? t("saved.own.dropped", { n: d.dropped }) : t("saved.own"),
-									});
-								}).catch((e) => setNotice({ kind: "error", text: e.message }));
-							},
-						}, t("own.save")),
-					),
-				),
-				h("textarea", {
-					className: "dshp-area",
-					value: ownServers,
-					onChange: (e) => setOwnServers(e.target.value),
-					spellCheck: false,
-					rows: 4,
-					style: { minHeight: 96 },
-				}),
-				h("p", { className: "dshp-hint", style: { margin: "8px 0 0", color: "var(--dshp-mute)", fontSize: 12 } }, t("own.hint")),
 			);
 		}
 
@@ -4853,27 +4982,43 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 		}
 
 		function readTheme() {
+			if (typeof productTheme !== "undefined" && productTheme && typeof productTheme.read === "function") {
+				return productTheme.read();
+			}
 			return detectHostTheme();
 		}
 
-		function SettingsRoot(props) {
-			const t = typeof props.t === "function" ? props.t : ((key) => key);
-			const [theme, setTheme] = useState(readTheme);
+		function useProductTheme() {
+			const readMode = () => {
+				try {
+					const mode = productTheme && typeof productTheme.mode === "function" ? productTheme.mode() : "system";
+					return ["dusk", "white", "system"].includes(mode) ? mode : "dusk";
+				} catch { return "dusk"; }
+			};
+			const [state, setState] = useState(() => ({ theme: readTheme(), mode: readMode() }));
 			useEffect(() => {
 				let cancelled = false;
-				let timer = 0;
-				const syncFromHost = () => {
-					if (!cancelled) setTheme(detectHostTheme());
+				const sync = (resolved, selected) => {
+					if (cancelled) return;
+					const mode = ["dusk", "white", "system"].includes(selected) ? selected : readMode();
+					setState({ theme: resolved || readTheme(), mode: mode });
 				};
+				if (typeof productTheme !== "undefined" && productTheme && typeof productTheme.subscribe === "function") {
+					const stop = productTheme.subscribe(sync);
+					sync(readTheme(), readMode());
+					return () => { cancelled = true; try { stop?.(); } catch { /* ignore */ } };
+				}
+				let timer = 0;
+				const syncHost = () => sync(detectHostTheme(), "system");
 				const syncSoon = () => {
 					if (timer) window.clearTimeout(timer);
-					timer = window.setTimeout(syncFromHost, 50);
+					timer = window.setTimeout(syncHost, 50);
 				};
-				syncFromHost();
+				syncHost();
 				let mq;
 				try {
 					mq = window.matchMedia?.("(prefers-color-scheme: dark)");
-					mq?.addEventListener?.("change", syncFromHost);
+					mq?.addEventListener?.("change", syncHost);
 				} catch { /* ignore */ }
 				let obs;
 				try {
@@ -4884,16 +5029,119 @@ body:not([data-ds-dark-theme]) .dshp-auth-ops button.primary{background:var(--ds
 				return () => {
 					cancelled = true;
 					if (timer) window.clearTimeout(timer);
-					try { mq?.removeEventListener?.("change", syncFromHost); } catch { /* ignore */ }
+					try { mq?.removeEventListener?.("change", syncHost); } catch { /* ignore */ }
 					try { obs?.disconnect(); } catch { /* ignore */ }
 				};
 			}, []);
+			return state;
+		}
+
+		function ProductThemeControl(props) {
+			const t = props && typeof props.t === "function" ? props.t : ((key) => key);
+			const modes = ["dusk", "white", "system"];
+			const themeState = useProductTheme();
+			const selectedMode = modes.includes(themeState.mode) ? themeState.mode : "dusk";
+			const onChange = (event) => {
+				const next = event?.target?.value;
+				if (!modes.includes(next)) return;
+				if (typeof productTheme !== "undefined" && productTheme && typeof productTheme.set === "function") {
+					productTheme.set(next);
+				}
+			};
+			return h("label", { className: "dshp-theme-control" },
+				h("select", {
+					className: "dshp-field dshp-theme-select",
+					"aria-label": t("theme.aria"),
+					value: selectedMode,
+					onChange,
+				},
+					h("option", { value: "dusk" }, t("theme.dark")),
+					h("option", { value: "white" }, t("theme.light")),
+					h("option", { value: "system" }, t("theme.system")),
+				),
+			);
+		}
+
+		function SettingsRoot(props) {
+			const t = typeof props.t === "function" ? props.t : ((key) => key);
+			const { theme } = useProductTheme();
+			const [studioChapter, setStudioChapter] = useState("patches");
+			const chapters = [
+				{ id: "patches", label: t("clean.patches"), description: t("studio.nav.patches") },
+				{ id: "prompt", label: t("override.title"), description: t("studio.nav.prompt") },
+				{ id: "servers", label: t("own.title"), description: t("studio.nav.servers") },
+				{ id: "rules", label: t("rules.title"), description: t("studio.nav.rules") },
+				{ id: "skills", label: t("skills.title"), description: t("studio.nav.skills") },
+			];
+			const chooseStudioChapter = (event, next) => {
+				if (!next) return;
+				event?.preventDefault?.();
+				setStudioChapter(next.id);
+				try {
+					const parent = event && event.currentTarget && event.currentTarget.parentElement;
+					const target = parent && parent.querySelector && parent.querySelector('[data-studio-chapter="' + next.id + '"]');
+					target?.focus?.({ preventScroll: true });
+				} catch { /* focus is best effort in host test doubles */ }
+			};
+			const moveStudioChapter = (event, offset) => {
+				const current = chapters.findIndex((chapter) => chapter.id === studioChapter);
+				chooseStudioChapter(event, chapters[(current + offset + chapters.length) % chapters.length]);
+			};
 			translate = t;
-			return h("div", { className: "dshp-root", "data-theme": theme },
+			return h("div", { className: "dshp-root dshp-studio-root", "data-theme": theme, "data-dshp-studio": "clean" },
 				h("style", null, PURGE_CSS),
-				h(PurgifySection, null),
-				h(RulesSection, null),
-				h(SkillsSection, null),
+				h("div", { className: "dshp-studio-layout" },
+					h("aside", { className: "dshp-studio-nav", "aria-label": t("purge.title") },
+						h("div", { className: "dshp-studio-nav-heading" },
+							h("span", { className: "dshp-kicker" }, t("purge.title")),
+							h("strong", null, t("clean.workspace")),
+						),
+						h("div", { className: "dshp-studio-nav-list", role: "tablist", "aria-orientation": "vertical" },
+							chapters.map((chapter) => h("button", {
+								key: chapter.id,
+								type: "button",
+								role: "tab",
+								className: "dshp-studio-nav-item" + (studioChapter === chapter.id ? " is-selected" : ""),
+								"data-studio-chapter": chapter.id,
+								"aria-selected": studioChapter === chapter.id,
+								"aria-controls": "dshp-studio-panel-" + chapter.id,
+								tabIndex: studioChapter === chapter.id ? 0 : -1,
+								onClick: () => setStudioChapter(chapter.id),
+								onKeyDown: (event) => {
+									if (event.key === "ArrowDown" || event.key === "ArrowRight") moveStudioChapter(event, 1);
+									else if (event.key === "ArrowUp" || event.key === "ArrowLeft") moveStudioChapter(event, -1);
+									else if (event.key === "Home") chooseStudioChapter(event, chapters[0]);
+									else if (event.key === "End") chooseStudioChapter(event, chapters[chapters.length - 1]);
+								},
+							},
+								h("span", { className: "dshp-studio-nav-label" }, chapter.label),
+								h("small", { className: "dshp-studio-nav-description" }, chapter.description),
+							)),
+						),
+					),
+					h("main", { className: "dshp-studio-main", "aria-live": "polite" },
+						h("div", {
+							className: "dshp-studio-purgify-host",
+							"data-studio-host": "purgify",
+							hidden: studioChapter === "rules" || studioChapter === "skills",
+							"aria-hidden": studioChapter === "rules" || studioChapter === "skills",
+						}, h(PurgifySection, { studioChapter: studioChapter })),
+						h("div", {
+							id: "dshp-studio-panel-rules",
+							className: "dshp-studio-chapter dshp-studio-rules",
+							"data-studio-chapter": "rules",
+							hidden: studioChapter !== "rules",
+							"aria-hidden": studioChapter !== "rules",
+						}, h(RulesSection, null)),
+						h("div", {
+							id: "dshp-studio-panel-skills",
+							className: "dshp-studio-chapter dshp-studio-skills",
+							"data-studio-chapter": "skills",
+							hidden: studioChapter !== "skills",
+							"aria-hidden": studioChapter !== "skills",
+						}, h(SkillsSection, null)),
+					),
+				),
 			);
 		}
 
@@ -4962,42 +5210,8 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 			return "";
 		}
 
-		function recoverComposerAfterIdle() {
-			try {
-				if (typeof document === "undefined") return;
-				const seat = document.querySelector("[data-composer-card], [data-composer-seat]");
-				const box = seat && seat.querySelector("[contenteditable='true'], textarea");
-				if (seat && box) return;
-				const sessions = rewindSessions || (rewindHost && rewindHost.sessions);
-				const sid = currentSessionId(sessions);
-				if (!sid) return;
-				const ws = rewindWorkspace || (rewindHost && rewindHost.uiWorkspace);
-				if (ws && typeof ws.openSession === "function") ws.openSession(sid);
-				else if (sessions && typeof sessions.open === "function") sessions.open(sid);
-			} catch { /* 宿主会话面还没起来 */ }
-		}
-
-		if (typeof document !== "undefined" && !window.__dshpComposerWatch) {
-			window.__dshpComposerWatch = true;
-			const onWake = () => { window.setTimeout(recoverComposerAfterIdle, 400); };
-			document.addEventListener("visibilitychange", () => {
-				if (document.visibilityState === "visible") onWake();
-			});
-			window.addEventListener("focus", onWake);
-			window.addEventListener("pageshow", onWake);
-			window.setInterval(recoverComposerAfterIdle, 8000);
-			try {
-				const obs = new MutationObserver(() => {
-					if (window.__dshpComposerWatchTick) return;
-					window.__dshpComposerWatchTick = true;
-					window.setTimeout(() => {
-						window.__dshpComposerWatchTick = false;
-						recoverComposerAfterIdle();
-					}, 600);
-				});
-				obs.observe(document.documentElement, { childList: true, subtree: true });
-			} catch { /* 旧环境没有 MutationObserver */ }
-		}
+		// Session navigation belongs to explicit user actions. Background DOM or
+		// wake-up checks must not reopen the session and steal composer focus.
 
 		function sessionKnown(sessions, sessionId) {
 			try {
@@ -5899,7 +6113,7 @@ function useWorkbenchFullscreen(React, elementRef, options = {}) {
 const PRODUCT_THEME_KEY = "dsh-purge-safe-ui-theme";
 const PRODUCT_THEME_EVENT = "dsh-purge-safe-ui-theme-change";
 const PRODUCT_THEME_MODES = Object.freeze(["dusk", "white", "system"]);
-const PRODUCT_THEME_DEFAULT = "dusk";
+const PRODUCT_THEME_DEFAULT = "system";
 
 function productThemeWindow(options) {
 	if (options && Object.prototype.hasOwnProperty.call(options, "window")) return options.window;
@@ -5920,6 +6134,23 @@ function productThemeMode(value) {
 	return PRODUCT_THEME_MODES.includes(value) ? value : "";
 }
 
+function productThemeMedia(options = {}) {
+	const win = productThemeWindow(options);
+	try {
+		if (!win || typeof win.matchMedia !== "function") return "";
+		const media = win.matchMedia("(prefers-color-scheme: dark)");
+		if (!media || typeof media.matches !== "boolean") return "";
+		return media.matches ? "dusk" : "white";
+	} catch { /* restricted webviews may throw */ }
+	return "";
+}
+
+function productThemeBooleanAttribute(target, name) {
+	if (!target || !target.hasAttribute?.(name)) return false;
+	const value = String(target.getAttribute?.(name) ?? "").trim().toLowerCase();
+	return !["false", "0", "off", "no"].includes(value);
+}
+
 function productThemeHost(options = {}) {
 	const win = productThemeWindow(options);
 	const doc = productThemeDocument(options, win);
@@ -5927,7 +6158,7 @@ function productThemeHost(options = {}) {
 	try {
 		for (const target of targets) {
 			if (!target) continue;
-			if (target.hasAttribute?.("data-ds-dark-theme") || target.hasAttribute?.("dark")) return "dusk";
+			if (productThemeBooleanAttribute(target, "data-ds-dark-theme") || productThemeBooleanAttribute(target, "dark")) return "dusk";
 			const attr = String(target.getAttribute?.("data-theme") || "").toLowerCase();
 			if (attr === "dusk" || attr === "dark") return "dusk";
 			if (attr === "white" || attr === "light") return "white";
@@ -5943,15 +6174,18 @@ function productThemeHost(options = {}) {
 			|| (computed && (computed.colorScheme || computed.getPropertyValue?.("color-scheme")))
 			|| "",
 		).toLowerCase();
-		if (scheme.includes("dark")) return "dusk";
-		if (scheme.includes("light")) return "white";
+		const schemes = scheme.split(/\s+/).filter(Boolean);
+		if (schemes.includes("dark") && schemes.includes("light")) {
+			const media = productThemeMedia({ ...options, window: win, document: doc });
+			if (media) return media;
+			return schemes[0] === "dark" ? "dusk" : "white";
+		}
+		if (schemes.includes("dark")) return "dusk";
+		if (schemes.includes("light")) return "white";
 	} catch { /* host inspection is best effort */ }
 
-	try {
-		if (win && typeof win.matchMedia === "function" && win.matchMedia("(prefers-color-scheme: dark)").matches) {
-			return "dusk";
-		}
-	} catch { /* restricted webviews may throw */ }
+	const media = productThemeMedia({ ...options, window: win, document: doc });
+	if (media) return media;
 	return "white";
 }
 
@@ -5987,9 +6221,10 @@ function createProductTheme(options = {}) {
 	};
 
 	const host = () => productThemeHost({ ...options, window: win, document: doc });
+	const system = () => productThemeMedia({ ...options, window: win, document: doc }) || host();
 	const read = () => {
 		const selected = mode();
-		return selected === "system" ? host() : selected;
+		return selected === "system" ? system() : selected;
 	};
 
 	const notify = () => {
@@ -7371,6 +7606,7 @@ const productTheme = createProductTheme();
   --ui-warning-bg:#fcf4e4;
   --ui-danger:#b63f3f;
   --ui-danger-bg:#fbeeed;
+  --ui-on-danger:#ffffff;
   --ui-radius-control:9px;
   --ui-radius-panel:16px;
   --ui-control-height:34px;
@@ -7427,7 +7663,7 @@ const productTheme = createProductTheme();
     --ui-line:#344253;--ui-line-strong:#52657b;--ui-text:#e9f0f8;--ui-muted:#a5b3c5;
     --ui-link:#9ac3ff;--ui-selected:#243c5c;--ui-selected-text:#bed9ff;--ui-nav:#141c26;
     --ui-success:#82c7a4;--ui-success-bg:#1d342b;--ui-warning:#dfbd78;--ui-warning-bg:#382f20;
-    --ui-danger:#f0a3a2;--ui-danger-bg:#3a2529;
+    --ui-danger:#f0a3a2;--ui-danger-bg:#3a2529;--ui-on-danger:#25161b;
     --ui-feature-surface:#18304c;--ui-feature-line:#3b5e86;--ui-feature-text:#f0f6ff;--ui-feature-muted:#aec7e8;--ui-feature-hover:#234568;
     --ui-panel-shadow:0 5px 16px rgb(0 0 0 / .14);
     --ui-glass-surface:rgb(22 48 66 / .68);
@@ -7452,7 +7688,7 @@ const productTheme = createProductTheme();
   --ui-line:#344253;--ui-line-strong:#52657b;--ui-text:#e9f0f8;--ui-muted:#a5b3c5;
   --ui-link:#9ac3ff;--ui-selected:#243c5c;--ui-selected-text:#bed9ff;--ui-nav:#141c26;
   --ui-success:#82c7a4;--ui-success-bg:#1d342b;--ui-warning:#dfbd78;--ui-warning-bg:#382f20;
-  --ui-danger:#f0a3a2;--ui-danger-bg:#3a2529;
+  --ui-danger:#f0a3a2;--ui-danger-bg:#3a2529;--ui-on-danger:#25161b;
   --ui-feature-surface:#18304c;--ui-feature-line:#3b5e86;--ui-feature-text:#f0f6ff;--ui-feature-muted:#aec7e8;--ui-feature-hover:#234568;
   --ui-panel-shadow:0 5px 16px rgb(0 0 0 / .14);
 
@@ -7477,7 +7713,7 @@ const productTheme = createProductTheme();
   --ui-line:#d8e1ed;--ui-line-strong:#a3b5cc;--ui-text:#1b2b40;--ui-muted:#43566d;
   --ui-link:#285fbb;--ui-selected:#e6effd;--ui-selected-text:#204f9b;--ui-nav:#ffffff;
   --ui-success:#237650;--ui-success-bg:#e9f5ee;--ui-warning:#8e641a;--ui-warning-bg:#fcf4e4;
-  --ui-danger:#b63f3f;--ui-danger-bg:#fbeeed;
+  --ui-danger:#b63f3f;--ui-danger-bg:#fbeeed;--ui-on-danger:#ffffff;
   --ui-feature-surface:#193858;--ui-feature-line:#45698e;--ui-feature-text:#f0f6ff;--ui-feature-muted:#bed2ea;--ui-feature-hover:#254c73;
   --ui-panel-shadow:0 4px 14px rgb(27 43 64 / .04);
 
@@ -7571,6 +7807,10 @@ const productTheme = createProductTheme();
 }
 
 /* Older skins cannot reset native widgets to a different scheme. */
+:is(.dshp-dock,.dshp-root,.rt-dock,.rt-full) select option {
+  background:var(--ui-surface);
+  color:var(--ui-text);
+}
 :is(.dshp-dock,.dshp-root,.dshp-auth-mask,.dshp-modal-bg,.dshp-restart-mask,.rt-dock,.rt-full){color-scheme:var(--ui-scheme)!important;}
 
 
@@ -12658,7 +12898,7 @@ const productTheme = createProductTheme();
   background-color: var(--rt-studio-dark-hover) !important;
   box-shadow: none !important;
   color: var(--rt-studio-dark-ink) !important;
-  color-scheme: dark;
+  color-scheme: var(--ui-scheme);
   font-size:var(--ui-text-control);
   text-align: left;
   text-overflow: ellipsis;
@@ -14615,6 +14855,9 @@ const productTheme = createProductTheme();
   padding:10px 16px;
   border-top:1px solid var(--ui-line);
 }
+/* Summary numbers use readable semantic tones in both product themes. */
+:is(.rt-dock,.rt-full) .rt-ov-metric-ok .rt-ov-metric-value { color:var(--ui-success); }
+:is(.rt-dock,.rt-full) .rt-ov-metric-warn .rt-ov-metric-value { color:var(--ui-warning); }
 
 
 /* 窄窗自适应：右侧浮动面板默认只有 620px 宽，按「容器宽度」换布局，
@@ -14649,7 +14892,7 @@ const productTheme = createProductTheme();
     padding: 8px;
     overflow-x: auto;
     border-right: 0;
-    border-bottom: 1px solid #233c47;
+    border-bottom: 1px solid var(--rt-border);
   }
   .rt-embedded .rt-nav .rt-tab-group { flex: 1 0 auto; min-height: 34px; justify-content: center; gap: 8px; padding: 7px 10px; }
   .rt-embedded .rt-nav .rt-tab-group::before { display: none; }
@@ -14695,7 +14938,7 @@ const productTheme = createProductTheme();
     padding: 8px;
     overflow-x: auto;
     border-right: 0;
-    border-bottom: 1px solid #233c47;
+    border-bottom: 1px solid var(--rt-border);
   }
   .rt-full .rt-nav::before { display: none; content: none; }
   .rt-full .rt-nav .rt-tab-group { flex: 1 0 auto; min-height: 34px; justify-content: center; padding: 7px 10px; }
@@ -14734,6 +14977,7 @@ const productTheme = createProductTheme();
 :is(.rt-dock.rt-studio:not(.rt-embedded),.rt-full.rt-studio) {
   background-color:var(--ui-water-base) !important;
   background-image:var(--ui-water-backdrop) !important;
+  color:var(--ui-text) !important;
   background-size:auto,auto,1400px 1000px,auto,auto;
   background-position:center,center,center top,center,center;
   border-color:var(--ui-glass-edge);
@@ -14896,7 +15140,8 @@ const productTheme = createProductTheme();
 :is(.rt-dock.rt-studio,.rt-full.rt-studio) .rt-ov-score-feature {
   background:
     radial-gradient(ellipse at 0% 0%,rgb(157 222 255 / .19),transparent 68%),
-    linear-gradient(120deg,rgb(48 103 159 / .5),rgb(21 58 91 / .88));
+    linear-gradient(120deg,rgb(48 103 159 / .5),rgb(21 58 91 / .88)),
+    var(--ui-feature-surface);
   border-color:rgb(176 223 255 / .4);
   box-shadow:var(--ui-glass-shadow),inset 0 0 28px rgb(135 210 255 / .08);
   backdrop-filter:var(--ui-glass-blur);
@@ -17037,7 +17282,7 @@ const productTheme = createProductTheme();
       }
       if (blocks.length === 0) {
         blocks.push(h('div', { key: 'none', className: 'rt-kv' }, h('b', null, '证据'),
-          h('span', { style: { color: 'var(--dsw-alias-state-error-primary)' } }, '缺失 —— 未验证/无证据的漏洞不计入报告，请补 redteam_http_evidence_add')))
+          h('span', { style: { color: 'var(--ui-danger)' } }, '缺失 —— 未验证/无证据的漏洞不计入报告，请补 redteam_http_evidence_add')))
       }
       return h('div', { key: 'eviwrap' }, blocks)
     }
@@ -17843,7 +18088,7 @@ const productTheme = createProductTheme();
                   h('b', null, '执行 '),
                   s.tool
                     ? h('span', { className: 'rt-mono' }, s.tool)
-                    : h('span', { style: { color: 'var(--dsw-alias-state-warn-primary, #f59e0b)' } }, '未记录实际命令（redteam_chain_add 的 tool）')),
+                    : h('span', { style: { color: 'var(--ui-warning)' } }, '未记录实际命令（redteam_chain_add 的 tool）')),
                 s.tool ? h('div', { style: { marginTop: 3 } },
                   h('button', {
                     className: 'rt-btn', style: { padding: '0 12px', fontSize: 'var(--ui-text-control)' },
@@ -21700,6 +21945,8 @@ const productTheme = createProductTheme();
       }
 
       return h('div', shellProps,
+        // Standalone/fullscreen mounts need their palette before the first paint.
+        embedded ? null : h('style', { 'data-redteam-ui-inline': '1' }, CSS),
         (full || embedded) ? null : h('div', { className: 'rt-grip', title: '拖动调整宽度', onMouseDown: startResizeLeft }),
         (full || embedded) ? null : h('div', { className: 'rt-resize-r', title: '拖动调整宽度', onMouseDown: startResizeRight }),
         (full || embedded) ? null : h('div', { className: 'rt-resize-b', title: '拖动调整高度', onMouseDown: startResizeBottom }),
@@ -21968,6 +22215,10 @@ const productTheme = createProductTheme();
 			return snap;
 		}
 
+		function requestDockFullscreen() {
+			try { window.dispatchEvent(new Event("rt-open-full")); } catch { /* restricted host */ }
+		}
+
 		function requestDrill(kind) {
 			const pending = kind || "tab";
 			const openEnv = () => {
@@ -21982,7 +22233,7 @@ const productTheme = createProductTheme();
 				try { if (__dshPurgeDrill && __dshPurgeDrill.setUI) __dshPurgeDrill.setUI({ open: true }); } catch { /* ignore */ }
 				if (pending === "env") openEnv();
 				if (pending === "full") {
-					try { window.open(window.location.href.split("#")[0] + "#redteam-full", "_blank", "noopener"); } catch { /* ignore */ }
+					requestDockFullscreen();
 				}
 				return;
 			}
@@ -22036,14 +22287,15 @@ const productTheme = createProductTheme();
 
 		function WelcomeNotice() {
 			const t = useT();
+			const { theme } = useProductTheme();
 			const [open, setOpen] = useState(() => !readWelcomeAck());
 			const [checked, setChecked] = useState(false);
 			if (!open) return null;
 			const repo = t("welcome.repo");
-			const node = h("div", { className: "dshp-auth-mask", role: "dialog", "aria-modal": "true" },
+			const node = h("div", { className: "dshp-auth-mask", "data-theme": theme, role: "dialog", "aria-modal": "true" },
 				h("div", { className: "dshp-auth-modal", style: { width: "min(560px,100%)" } },
 					h("h2", null, t("welcome.title")),
-					h("div", { className: "muted", style: { color: "var(--dsw-alias-label-secondary,#999)", fontSize: 12 } }, t("welcome.lead")),
+					h("div", { className: "muted", style: { color: "var(--ui-muted)", fontSize: 12 } }, t("welcome.lead")),
 					h("div", { className: "dshp-auth-warn" }, t("welcome.warn")),
 					h("div", { className: "dshp-auth-legal", style: { height: "auto", maxHeight: 280 } },
 						h("p", null, t("welcome.body")),
@@ -22052,7 +22304,7 @@ const productTheme = createProductTheme();
 								href: repo,
 								target: "_blank",
 								rel: "noopener noreferrer",
-								style: { color: "var(--dsw-alias-label-brand, #8fbf9a)", wordBreak: "break-all" },
+								style: { color: "var(--ui-link)", wordBreak: "break-all" },
 							}, repo),
 						),
 						h("h3", null, t("welcome.bans")),
@@ -22095,6 +22347,7 @@ const productTheme = createProductTheme();
 
 		function AuthGate(props) {
 			const t = useT();
+			const { theme } = useProductTheme();
 			const [left, setLeft] = useState(10);
 			const [readEnd, setReadEnd] = useState(false);
 			const [checks, setChecks] = useState({ read: false, scope: false, ban: false });
@@ -22132,10 +22385,10 @@ const productTheme = createProductTheme();
 				: (props.pending === "full"
 					? t("auth.ok.full")
 					: (props.pending === "env" ? t("auth.ok.env") : t("auth.ok.tab")));
-			return h("div", { className: "dshp-auth-mask", role: "dialog", "aria-modal": "true" },
+			return h("div", { className: "dshp-auth-mask", "data-theme": theme, role: "dialog", "aria-modal": "true" },
 				h("div", { className: "dshp-auth-modal" },
 					h("h2", null, t("auth.title")),
-					h("div", { className: "muted", style: { color: "var(--dsw-alias-label-secondary,#999)", fontSize: 12 } }, t("auth.lead")),
+					h("div", { className: "muted", style: { color: "var(--ui-muted)", fontSize: 12 } }, t("auth.lead")),
 					h("div", { className: "dshp-auth-warn" }, t("auth.warn")),
 					h("div", {
 						className: "dshp-auth-legal",
@@ -22143,7 +22396,7 @@ const productTheme = createProductTheme();
 						onScroll,
 						dangerouslySetInnerHTML: { __html: AUTH_LEGAL_HTML },
 					}),
-					h("div", { style: { color: "var(--dsw-alias-label-secondary,#999)", fontSize: 12 } }, hint),
+					h("div", { style: { color: "var(--ui-muted)", fontSize: 12 } }, hint),
 					h("div", { className: "dshp-auth-checks" },
 						[["read", "auth.check.read"], ["scope", "auth.check.scope"], ["ban", "auth.check.ban"]].map((row) =>
 							h("label", { key: row[0], className: locked ? "locked" : "" },
@@ -22173,7 +22426,7 @@ const productTheme = createProductTheme();
 									try { if (__dshPurgeDrill && __dshPurgeDrill.setUI) __dshPurgeDrill.setUI({ open: true, tab: "env" }); } catch { /* ignore */ }
 								}
 								if (kind === "full") {
-									try { window.open(window.location.href.split("#")[0] + "#redteam-full", "_blank", "noopener"); } catch { /* ignore */ }
+						requestDockFullscreen();
 								}
 							},
 						}, okLabel),
@@ -22311,6 +22564,7 @@ const productTheme = createProductTheme();
 		/** 红队发送前门禁：未就绪 → 授权并打开环境适配；可确认跳过。 */
 		function EnvAdaptSendGate() {
 			const t = useT();
+			const { theme } = useProductTheme();
 			const [open, setOpen] = useState(false);
 			const [confirmSkip, setConfirmSkip] = useState(false);
 			const [status, setStatus] = useState(null);
@@ -22438,11 +22692,11 @@ const productTheme = createProductTheme();
 			if (!open) return null;
 
 			const message = (status && status.message) || t("envGate.lead");
-			return h("div", { className: "dshp-auth-mask dshp-env-gate", role: "dialog", "aria-modal": "true" },
+			return h("div", { className: "dshp-auth-mask dshp-env-gate", "data-theme": theme, role: "dialog", "aria-modal": "true" },
 				h("div", { className: "dshp-auth-modal", style: { width: "min(480px,100%)" } },
 					h("h2", null, t("envGate.title")),
 					h("div", { style: { fontSize: 13, lineHeight: 1.55 } }, message),
-					h("div", { style: { fontSize: 12, color: "var(--dsw-alias-label-secondary,#999)", lineHeight: 1.5 } }, t("envGate.kaliHint")),
+					h("div", { style: { fontSize: 12, color: "var(--ui-muted)", lineHeight: 1.5 } }, t("envGate.kaliHint")),
 					confirmSkip
 						? h("div", { className: "dshp-auth-warn" }, t("envGate.skipConfirm"))
 						: null,
@@ -22504,36 +22758,23 @@ const productTheme = createProductTheme();
 			const t = useT();
 			const st = useDock();
 			const [geom, setGeom] = useState(() => loadDockGeom());
-			const [dockTheme, setDockTheme] = useState(detectHostTheme);
+			const { theme: dockTheme } = useProductTheme();
 			const [currentSid, setCurrentSid] = useState("");
 			const [currentTitle, setCurrentTitle] = useState("");
+			const dockRef = useRef(null);
+			const fullscreen = useWorkbenchFullscreen(react, dockRef);
 			useEffect(() => {
-				const sync = () => setDockTheme(detectHostTheme());
-				sync();
-				const obs = new MutationObserver(sync);
-				if (document.body) obs.observe(document.body, { attributes: true, attributeFilter: ["data-ds-dark-theme", "class", "style"] });
-				obs.observe(document.documentElement, { attributes: true, attributeFilter: ["data-ds-dark-theme", "class", "style"] });
-				const timer = window.setInterval(sync, 1500);
-				return () => { obs.disconnect(); window.clearInterval(timer); };
+				const onFull = () => { fullscreen.enter(); };
+				window.addEventListener("rt-open-full", onFull);
+				return () => window.removeEventListener("rt-open-full", onFull);
 			}, []);
+			useEffect(() => { if (!st.open && fullscreen.isExpanded()) fullscreen.exit(); }, [st.open]);
 			useEffect(() => {
-				let uiTag = document.querySelector('style[data-dsh-purge-safe-ui="1"]');
-				if (!uiTag) {
-					uiTag = document.createElement("style");
-					uiTag.setAttribute("data-dsh-purge-safe-ui", "1");
-					uiTag.textContent = PURGE_CSS;
-					document.head.append(uiTag);
-				}
-				if (!__dshPurgeDrill || !__dshPurgeDrill.CSS) return undefined;
-				const styleTag = document.createElement("style");
-				styleTag.setAttribute("data-dsh-purge-safe-drill", "1");
-				styleTag.textContent = __dshPurgeDrill.CSS;
-				document.head.append(styleTag);
 				const widthTag = document.createElement("style");
 				widthTag.setAttribute("data-dsh-purge-safe-dock-w", "1");
 				widthTag.textContent = ":root{--dshp-dock-w:" + geom.w + "px;--dshp-dock-h:" + geom.h + "px}";
 				document.head.append(widthTag);
-				return () => { styleTag.remove(); widthTag.remove(); };
+				return () => { widthTag.remove(); };
 			}, []);
 			useEffect(() => {
 				const tick = () => {
@@ -22551,7 +22792,7 @@ const productTheme = createProductTheme();
 				if (tag) tag.textContent = ":root{--dshp-dock-w:" + geom.w + "px;--dshp-dock-h:" + geom.h + "px}";
 			}, [geom]);
 			useEffect(() => {
-				const onResize = () => setGeom((g) => clampDockGeom(g));
+				const onResize = () => { if (!fullscreen.isExpanded()) setGeom((g) => clampDockGeom(g)); };
 				window.addEventListener("resize", onResize);
 				return () => window.removeEventListener("resize", onResize);
 			}, []);
@@ -22565,7 +22806,7 @@ const productTheme = createProductTheme();
 				setDock({ tab: "clean", authOpen: false, pending: "tab" });
 			};
 			const startDrag = (e) => {
-				if (e.button !== 0) return;
+				if (fullscreen.isExpanded() || e.button !== 0) return;
 				if (e.target && e.target.closest && e.target.closest("button,a,input,select,textarea,label")) return;
 				e.preventDefault();
 				const sx = e.clientX;
@@ -22646,9 +22887,12 @@ const productTheme = createProductTheme();
 				? h(SettingsRoot, { t })
 				: (readDrillAuth() && __dshPurgeDrill.Panel
 					? h(__dshPurgeDrill.Panel, { embedded: true, sessionId: currentSid || null, sessionTitle: currentTitle || "" })
-					: h("div", { style: { padding: 16, color: "var(--dsw-alias-label-secondary)" } }, t("dock.unauthorized")));
+					: h("div", { style: { padding: 16, color: "var(--ui-muted)" } }, t("dock.unauthorized")));
 			const panel = h("div", {
-				className: "dshp-dock",
+				className: "dshp-dock dshp-studio-dock",
+				ref: dockRef,
+				"data-fullscreen": fullscreen.expanded ? "true" : "false",
+				"data-dshp-studio": st.tab === "clean" ? "clean" : "drill",
 				"data-theme": dockTheme === "white" ? "white" : "dusk",
 				"data-open": st.open ? "1" : "0",
 				style: {
@@ -22660,30 +22904,35 @@ const productTheme = createProductTheme();
 					height: geom.h + "px",
 				},
 			},
+				h("style", { "data-dsh-purge-safe-ui": "1" }, PURGE_CSS),
+				__dshPurgeDrill && __dshPurgeDrill.CSS
+					? h("style", { "data-dsh-purge-safe-drill": "1" }, __dshPurgeDrill.CSS)
+					: null,
 				h("div", { className: "dshp-dock-head", onMouseDown: startDrag, title: "按住拖动面板" },
 					h("b", null, "dsh-purge-safe"),
+					h("div", { className: "dshp-dock-modes", role: "tablist" },
+						h("button", {
+							type: "button",
+							className: "dshp-dock-tab" + (st.tab === "clean" ? " on" : ""),
+							role: "tab",
+							"aria-selected": st.tab === "clean" ? "true" : "false",
+							onClick: () => onTab("clean"),
+						}, t("dock.clean")),
+						h("button", {
+							type: "button",
+							className: "dshp-dock-tab" + (st.tab === "drill" ? " on" : ""),
+							role: "tab",
+							"aria-selected": st.tab === "drill" ? "true" : "false",
+							title: readDrillAuth() ? t("dock.drill") : (t("dock.drill") + " · " + t("dock.unauthorized")),
+							onClick: () => onTab("drill"),
+						}, t("dock.drill")),
+					),
 					h("span", { style: { flex: 1 } }),
-					st.tab === "drill" && readDrillAuth()
-						? h("button", { type: "button", onClick: () => requestDrill("full") }, t("dock.full"))
+					h(ProductThemeControl, { t }),
+					(fullscreen.expanded || (st.tab === "drill" && readDrillAuth()))
+						? h("button", { type: "button", "aria-pressed": fullscreen.expanded, onClick: () => fullscreen.expanded ? fullscreen.exit() : requestDrill("full") }, t(fullscreen.expanded ? "dock.exitFull" : "dock.full"))
 						: null,
-					h("button", { type: "button", onClick: () => setDock({ open: false, authOpen: false, tab: "clean", pending: "tab" }) }, t("dock.close")),
-				),
-				h("div", { className: "dshp-dock-tabs", role: "tablist" },
-					h("button", {
-						type: "button",
-						className: "dshp-dock-tab" + (st.tab === "clean" ? " on" : ""),
-						role: "tab",
-						"aria-selected": st.tab === "clean" ? "true" : "false",
-						onClick: () => onTab("clean"),
-					}, t("dock.clean")),
-					h("button", {
-						type: "button",
-						className: "dshp-dock-tab" + (st.tab === "drill" ? " on" : ""),
-						role: "tab",
-						"aria-selected": st.tab === "drill" ? "true" : "false",
-						title: readDrillAuth() ? t("dock.drill") : (t("dock.drill") + " · " + t("dock.unauthorized")),
-						onClick: () => onTab("drill"),
-					}, t("dock.drill")),
+					h("button", { type: "button", onClick: () => { fullscreen.exit(); setDock({ open: false, authOpen: false, tab: "clean", pending: "tab" }); } }, t("dock.close")),
 				),
 				h("div", { className: "dshp-dock-body" }, body),
 				h("div", { className: "dshp-dock-resize-l", title: "拖动调整宽度", onMouseDown: startResizeLeft }),
@@ -22698,7 +22947,7 @@ const productTheme = createProductTheme();
 				const rd = require("react-dom");
 				if (rd && typeof rd.createPortal === "function" && typeof document !== "undefined" && document.body) {
 					portal = rd.createPortal(panel, document.body);
-					if (authNode) authPortal = rd.createPortal(authNode, document.body);
+					if (authNode) authPortal = rd.createPortal(authNode, fullscreenPortalHost());
 				}
 			} catch { /* host 可能没暴露 react-dom */ }
 			return h(react.Fragment, null,
@@ -23050,6 +23299,7 @@ const productTheme = createProductTheme();
 		function AttentionToast() {
 			const a = useAttention();
 			const t = useT();
+			const { theme } = useProductTheme();
 			/* snoozed = 提醒恢复的时间戳；0 表示没稍后。 */
 			const [snoozeUntil, setSnoozeUntil] = useState(0);
 			const [pos, setPos] = useState(readAttentionPos);
@@ -23186,7 +23436,7 @@ const productTheme = createProductTheme();
 			const live = (dragging && dragRef.current && dragRef.current.last) || pos;
 			const style = live ? { left: live.x, top: live.y, right: "auto", bottom: "auto" } : undefined;
 
-			return h("div", {
+				const capsule = h("div", {
 				ref: capRef,
 				className: "dshp-attn-capsule"
 					+ (urgent ? " is-urgent" : "")
@@ -23235,6 +23485,14 @@ const productTheme = createProductTheme();
 					h("div", { className: "dshp-attn-capsule-foot" },
 						h("button", { type: "button", className: "dshp-attn-capsule-go", onClick: handleAttention }, t("attn.toast.go")),
 						h("button", { type: "button", className: "dshp-attn-capsule-later", onClick: quiet ? restore : snooze }, quiet ? t("attn.toast.restore") : t("attn.toast.later")))));
+				const portalHost = h("div", { className: "dshp-root dshp-attn-portal", "data-theme": theme }, capsule);
+				try {
+					const rd = require("react-dom");
+					if (rd && typeof rd.createPortal === "function" && typeof document !== "undefined" && document.body) {
+						return rd.createPortal(portalHost, document.body);
+					}
+				} catch { /* host 可能没暴露 react-dom */ }
+				return portalHost;
 		}
 
 		function installRewindUi(ctx) {
