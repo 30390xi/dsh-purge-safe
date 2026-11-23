@@ -456,7 +456,7 @@ assess 稿却写：用 `sort=todo` 取未评估，直到 `sort=todo` 查不到�
 
 | | 上游 | 插件 |
 | --- | --- | --- |
-| 查版本 | npm `dsh-redteam-mode` | GitHub `CallMeGuLab/dsh-purge-safe`（npm 没有这个包） |
+| 查版本 | npm `dsh-redteam-mode` | GitHub `YangYuHou/dsh-poifle`（私有，npm 没有这个包） |
 | 装完重启 | `dsh web` | 当前宿主（官方 exe / 社区版 / `dsh web`） |
 
 内网机没有 GitHub 时，插件的「检查更新」会失败，只显示当前版本。这是预期，不是红队功能坏了。

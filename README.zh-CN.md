@@ -82,13 +82,13 @@ Harness 不只是把问题交给模型。它还会在运行时改提示词、审
 
 **原版禁止倒卖。** 不得付费转售、换皮上架，或以商品形式分销。
 
-**二开必须署名**，并写明来源仓库：[dsh-purge-safe / CallMeGuLab](./NOTICE)。借用本项目的名称、思路、代码或提示词，同样必须署名。
+**二开必须署名**，并写明来源仓库：[dsh-purge-safe / YangYuHou](./NOTICE)。借用本项目的名称、思路、代码或提示词，同样必须署名。
 
 不署名、隐瞒来源、改头换面据为己有，或把原版拿去倒卖，维护团队将依法追究责任。
 
 ## 许可证
 
-本仓库使用 [Apache License 2.0](./LICENSE)。二开、再分发必须保留版权声明和 [NOTICE](./NOTICE)，写明来源 [dsh-purge-safe / CallMeGuLab](./NOTICE)。原版禁止倒卖。
+本仓库使用 [Apache License 2.0](./LICENSE)。二开、再分发必须保留版权声明和 [NOTICE](./NOTICE)，写明来源 [dsh-purge-safe / YangYuHou](./NOTICE)。原版禁止倒卖。
 
 ---
 

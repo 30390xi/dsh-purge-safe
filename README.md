@@ -80,13 +80,13 @@ It only touches the official `@deepseek-ai` packages and local config on the use
 
 **Resale of the original build is prohibited.** Paid resale, re-skinning for store listings, and distribution as a commercial product are not permitted.
 
-**Forks must attribute** and name the source repository: [dsh-purge-safe / CallMeGuLab](./NOTICE). Same if you borrow the name, ideas, code, or prompts.
+**Forks must attribute** and name the source repository: [dsh-purge-safe / YangYuHou](./NOTICE). Same if you borrow the name, ideas, code, or prompts.
 
 Removing attribution, concealing the source, or reselling the original will be pursued by the maintainers.
 
 ## License
 
-This repo is [Apache License 2.0](./LICENSE). Forks and redistributions must keep the copyright notice and [NOTICE](./NOTICE), and name [dsh-purge-safe / CallMeGuLab](./NOTICE). Resale of the original is prohibited.
+This repo is [Apache License 2.0](./LICENSE). Forks and redistributions must keep the copyright notice and [NOTICE](./NOTICE), and name [dsh-purge-safe / YangYuHou](./NOTICE). Resale of the original is prohibited.
 
 ---
 
