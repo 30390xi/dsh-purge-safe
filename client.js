@@ -5448,6 +5448,226 @@ body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tert
 			throw new Error((lastError && lastError.message) || "回退后的会话没有打开");
 		}
 
+		/* __DSH_PE_BEGIN__ 提示词增强（鸢码酱）
+		   阶段 2：只有 UI。改写先走本地假数据，Host 路由在阶段 1/3 接。
+		   四态：idle / busy / undo / error，见 .dshp-pe-* 样式。 */
+		const PE_ICON_IDLE = "<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"ym-icon ym-icon--idle\" viewBox=\"86 -34 264 292\" fill=\"none\" aria-hidden=\"true\"><g>\n  <rect class=\"ym-plate\" x=\"86\" y=\"-34\" width=\"264\" height=\"292\" rx=\"40\" fill=\"var(--ym-plate,transparent)\"/>\n  <g class=\"hair-back\">\n  <path d=\"M 94 152 C 84 52 132 8 200 8 C 268 8 316 52 306 152\n  C 312 210 300 258 276 282 C 252 302 226 306 200 306 C 174 306 148 302 124 282 C 100 258 88 210 94 152 Z\" fill=\"var(--ym-ink,#141414)\" stroke=\"var(--ym-ink,#141414)\" stroke-width=\"2.4\">\n  </path>\n  </g>\n  <g class=\"limb-head\" transform=\"rotate(0 200 152)\">\n  <ellipse cx=\"200\" cy=\"152\" rx=\"103\" ry=\"111\" fill=\"var(--ym-face,#fff)\" stroke=\"var(--ym-ink,#141414)\" stroke-width=\"2.4\">\n  </ellipse>\n  <ellipse cx=\"200\" cy=\"200\" rx=\"78\" ry=\"55\" fill=\"var(--ym-face,#fff)\">\n  </ellipse>\n  </g>\n  <g class=\"face-layer\" transform=\"translate(200 182) scale(0.86) translate(-200 -182)\">\n  <g>\n  <ellipse cx=\"155\" cy=\"168\" rx=\"30\" ry=\"34\" fill=\"#fff\" stroke=\"#141414\" stroke-width=\"2.4\">\n  </ellipse>\n  <ellipse cx=\"155\" cy=\"171\" rx=\"17\" ry=\"20\" fill=\"#141414\">\n  </ellipse>\n  <ellipse cx=\"155\" cy=\"172\" rx=\"6\" ry=\"8\" fill=\"#141414\">\n  </ellipse>\n  <ellipse cx=\"147\" cy=\"160\" rx=\"6\" ry=\"7\" fill=\"#fff\">\n  </ellipse>\n  <circle cx=\"162\" cy=\"170\" r=\"3\" fill=\"#fff\" opacity=\"0.95\">\n  </circle>\n  <circle cx=\"157\" cy=\"166\" r=\"1.6\" fill=\"#fff\" opacity=\"0.8\">\n  </circle>\n  <path d=\"M 126.5 159.5 Q 155 130 183.5 159.5\" fill=\"none\" stroke=\"#141414\" stroke-width=\"3.4\" stroke-linecap=\"round\">\n  </path>\n  </g>\n  <g>\n  <ellipse cx=\"245\" cy=\"168\" rx=\"30\" ry=\"34\" fill=\"#fff\" stroke=\"#141414\" stroke-width=\"2.4\">\n  </ellipse>\n  <ellipse cx=\"245\" cy=\"171\" rx=\"17\" ry=\"20\" fill=\"#141414\">\n  </ellipse>\n  <ellipse cx=\"245\" cy=\"172\" rx=\"6\" ry=\"8\" fill=\"#141414\">\n  </ellipse>\n  <ellipse cx=\"237\" cy=\"160\" rx=\"6\" ry=\"7\" fill=\"#fff\">\n  </ellipse>\n  <circle cx=\"252\" cy=\"170\" r=\"3\" fill=\"#fff\" opacity=\"0.95\">\n  </circle>\n  <circle cx=\"247\" cy=\"166\" r=\"1.6\" fill=\"#fff\" opacity=\"0.8\">\n  </circle>\n  <path d=\"M 216.5 159.5 Q 245 130 273.5 159.5\" fill=\"none\" stroke=\"#141414\" stroke-width=\"3.4\" stroke-linecap=\"round\">\n  </path>\n  </g>\n  <path d=\"M 193 217 Q 200 228 207 217 Z\" fill=\"#fff\" stroke=\"#141414\" stroke-width=\"1.5\">\n  </path>\n  </g>\n  <g class=\"hair-front\">\n  <path d=\"M 84 138 C 72 48 130 6 200 6 C 270 6 328 48 316 138\n  C 320 182 316 238 308 264 C 300 274 288 270 286 248 C 284 212 284 184 276 158\n  C 250 152 236 151 214 151 C 208 151 204 146 200 141\n  C 196 146 192 151 186 151 C 164 151 146 153 124 158\n  C 116 184 116 212 114 248 C 112 270 100 274 92 264 C 84 238 80 182 84 138 Z\" fill=\"var(--ym-ink,#141414)\"/>\n  </g>\n</g></svg>";
+		const PE_ICON_THINK = "<svg xmlns=\"http://www.w3.org/2000/svg\" class=\"ym-icon ym-icon--think\" viewBox=\"86 -34 264 292\" fill=\"none\" aria-hidden=\"true\"><g>\n  <rect class=\"ym-plate\" x=\"86\" y=\"-34\" width=\"264\" height=\"292\" rx=\"40\" fill=\"var(--ym-plate,transparent)\"/>\n  <g class=\"hair-back\">\n  <path d=\"M 94 152 C 84 52 132 8 200 8 C 268 8 316 52 306 152\n  C 312 210 300 258 276 282 C 252 302 226 306 200 306 C 174 306 148 302 124 282 C 100 258 88 210 94 152 Z\" fill=\"var(--ym-ink,#141414)\" stroke=\"var(--ym-ink,#141414)\" stroke-width=\"2.4\">\n  </path>\n  </g>\n  <g class=\"limb-head\" transform=\"rotate(0 200 152)\">\n  <ellipse cx=\"200\" cy=\"152\" rx=\"103\" ry=\"111\" fill=\"var(--ym-face,#fff)\" stroke=\"var(--ym-ink,#141414)\" stroke-width=\"2.4\">\n  </ellipse>\n  <ellipse cx=\"200\" cy=\"200\" rx=\"78\" ry=\"55\" fill=\"var(--ym-face,#fff)\">\n  </ellipse>\n  </g>\n  <g class=\"face-layer\" transform=\"translate(200 182) scale(0.86) translate(-200 -182)\">\n  <g>\n  <ellipse cx=\"155\" cy=\"168\" rx=\"30\" ry=\"34\" fill=\"#fff\" stroke=\"#141414\" stroke-width=\"2.4\">\n  </ellipse>\n  <ellipse cx=\"155\" cy=\"171\" rx=\"17\" ry=\"20\" fill=\"#141414\">\n  </ellipse>\n  <ellipse cx=\"155\" cy=\"172\" rx=\"6\" ry=\"8\" fill=\"#141414\">\n  </ellipse>\n  <ellipse cx=\"147\" cy=\"160\" rx=\"6\" ry=\"7\" fill=\"#fff\">\n  </ellipse>\n  <circle cx=\"162\" cy=\"170\" r=\"3\" fill=\"#fff\" opacity=\"0.95\">\n  </circle>\n  <circle cx=\"157\" cy=\"166\" r=\"1.6\" fill=\"#fff\" opacity=\"0.8\">\n  </circle>\n  <path d=\"M 126.5 159.5 Q 155 130 183.5 159.5\" fill=\"none\" stroke=\"#141414\" stroke-width=\"3.4\" stroke-linecap=\"round\">\n  </path>\n  </g>\n  <g>\n  <ellipse cx=\"245\" cy=\"168\" rx=\"30\" ry=\"34\" fill=\"#fff\" stroke=\"#141414\" stroke-width=\"2.4\">\n  </ellipse>\n  <ellipse cx=\"245\" cy=\"171\" rx=\"17\" ry=\"20\" fill=\"#141414\">\n  </ellipse>\n  <ellipse cx=\"245\" cy=\"172\" rx=\"6\" ry=\"8\" fill=\"#141414\">\n  </ellipse>\n  <ellipse cx=\"237\" cy=\"160\" rx=\"6\" ry=\"7\" fill=\"#fff\">\n  </ellipse>\n  <circle cx=\"252\" cy=\"170\" r=\"3\" fill=\"#fff\" opacity=\"0.95\">\n  </circle>\n  <circle cx=\"247\" cy=\"166\" r=\"1.6\" fill=\"#fff\" opacity=\"0.8\">\n  </circle>\n  <path d=\"M 216.5 159.5 Q 245 130 273.5 159.5\" fill=\"none\" stroke=\"#141414\" stroke-width=\"3.4\" stroke-linecap=\"round\">\n  </path>\n  </g>\n  <path d=\"M 193 217 Q 200 228 207 217 Z\" fill=\"#fff\" stroke=\"#141414\" stroke-width=\"1.5\">\n  </path>\n  </g>\n  <g class=\"hair-front\">\n  <path d=\"M 84 138 C 72 48 130 6 200 6 C 270 6 328 48 316 138\n  C 320 182 316 238 308 264 C 300 274 288 270 286 248 C 284 212 284 184 276 158\n  C 250 152 236 151 214 151 C 208 151 204 146 200 141\n  C 196 146 192 151 186 151 C 164 151 146 153 124 158\n  C 116 184 116 212 114 248 C 112 270 100 274 92 264 C 84 238 80 182 84 138 Z\" fill=\"var(--ym-ink,#141414)\"/>\n  </g>\n</g>\n  <g fill=\"var(--ym-face,#fff)\" stroke=\"var(--ym-ink,#141414)\" stroke-linecap=\"round\">\n    <circle class=\"ym-b1\" cx=\"316\" cy=\"46\" r=\"6\"   stroke-width=\"4.4\"/>\n    <circle class=\"ym-b2\" cx=\"330\" cy=\"20\" r=\"9\"   stroke-width=\"4.8\"/>\n    <circle class=\"ym-b3\" cx=\"342\" cy=\"-12\" r=\"12.5\" stroke-width=\"5\"/>\n  </g>\n  <g class=\"ym-b3\" fill=\"var(--ym-ink,#141414)\">\n    <circle cx=\"337.5\" cy=\"-17\" r=\"1.9\"/>\n    <circle cx=\"342\"   cy=\"-11.5\" r=\"1.9\"/>\n    <circle cx=\"346.5\" cy=\"-17\" r=\"1.9\"/>\n  </g></svg>";
+
+		const PE_CSS = `
+.dshp-pe-wrap{position:relative;display:inline-flex;align-items:center;gap:6px;max-width:172px}
+.dshp-pe{appearance:none;position:relative;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary,currentColor);cursor:pointer;flex:0 0 auto}
+.dshp-pe:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12))}
+.dshp-pe:disabled{opacity:.4;cursor:default}
+.dshp-pe svg{display:block;width:22px;height:22px;color:var(--dsw-alias-label-primary,currentColor)}
+.dshp-pe[data-state="busy"] svg{animation:dshp-pe-pulse 1.1s ease-in-out infinite}
+.dshp-pe[data-state="busy"]{cursor:progress}
+.dshp-pe[data-state="undo"]{color:var(--dsw-alias-brand-primary-new-color,#4d6bfe)}
+.dshp-pe[data-state="undo"] svg{color:currentColor}
+.dshp-pe[data-state="error"]{color:var(--dsw-alias-state-error,#d93025)}
+.dshp-pe[data-state="error"] svg{color:currentColor}
+/* 上下文蓝点：右下 2px */
+.dshp-pe-dot{position:absolute;right:2px;bottom:2px;width:4px;height:4px;border-radius:50%;background:var(--dsw-alias-brand-primary-new-color,#4d6bfe);pointer-events:none}
+/* 通知条 */
+.dshp-pe-note{font:12px/1.2 var(--ds-font-sans,system-ui,sans-serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:118px}
+.dshp-pe-note[data-tone="info"]{color:var(--dsw-alias-label-tertiary,#9a958c)}
+.dshp-pe-note[data-tone="error"]{color:var(--dsw-alias-state-error,#d93025)}
+@keyframes dshp-pe-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.dshp-pe[data-state="busy"] svg{animation:none}}
+/* 鸢码酱图标自带样式：深色主题浅底板 + 思考气泡脉动 */
+
+.ym-icon { display: block; width: 100%; height: 100%; --ym-plate: transparent; }
+
+/* 主题适配：两色简笔在深底上会糊掉，所以深色主题不翻转配色，
+   而是给一块浅色底板（--ym-plate）。浅色主题下底板透明。 */
+@media (prefers-color-scheme: dark) {
+  .ym-icon { --ym-plate: #f5f7fb; }
+}
+html[data-theme="dark"] .ym-icon,
+[data-theme="dark"] .ym-icon,
+html.dark .ym-icon,
+.dark .ym-icon { --ym-plate: #f5f7fb; }
+/* 思考态：三个气泡由近到远逐个亮起，模拟“正在想” */
+.ym-icon--think .ym-b1,
+.ym-icon--think .ym-b2,
+.ym-icon--think .ym-b3 { animation: ym-think-pop 1.5s ease-in-out infinite; transform-origin: center; }
+.ym-icon--think .ym-b1 { animation-delay: 0s; }
+.ym-icon--think .ym-b2 { animation-delay: .18s; }
+.ym-icon--think .ym-b3 { animation-delay: .36s; }
+@keyframes ym-think-pop {
+  0%, 62%, 100% { opacity: .45; }
+  26%           { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ym-icon--think .ym-b1,
+  .ym-icon--think .ym-b2,
+  .ym-icon--think .ym-b3 { animation: none !important; opacity: 1; }
+}
+
+`;
+
+		function peSessions() {
+			return rewindSessions;
+		}
+
+		function peDraft(sessionId, inputActions) {
+			return String(liveDraft(sessionId, inputActions) || "");
+		}
+
+		/* 阶段 2 的本地假改写：只做「能看出效果」的最小实现，
+		   等阶段 3 接真模型时整个函数被换成 fetch 调用。 */
+		function peFakeEnhance(draft) {
+			const trimmed = draft.trim();
+			if (!trimmed) return "";
+			const isQuestion = /[?？]\s*$/.test(trimmed);
+			if (isQuestion) return trimmed;
+			return [
+				"目标：" + trimmed,
+				"",
+				"要求：",
+				"1. 先确认目标范围与成功标准，再动手。",
+				"2. 保留上面原文里的命令、路径、URL、版本号，逐字不改。",
+				"3. 输出可直接执行的步骤，每步说明验证方式。",
+			].join("\n");
+		}
+
+		function PromptEnhanceButton(props) {
+			const t = props.t || translate;
+			const sessionId = props.sessionId || currentSessionId(peSessions());
+			const inputActions = props.inputActions;
+			const [state, setState] = useState("idle");      // idle | busy | undo | error
+			const [restore, setRestore] = useState(null);    // { origin, produced }
+			const [note, setNote] = useState("");
+			const aliveRef = useRef(true);
+
+			useEffect(() => () => { aliveRef.current = false; }, []);
+
+			/* 用户一编辑，撤销态立即失效 */
+			useEffect(() => {
+				if (state !== "undo") return;
+				const timer = window.setInterval(() => {
+					if (!aliveRef.current) return;
+					const now = peDraft(sessionId, inputActions);
+					if (restore && now !== restore.produced) {
+						setState("idle");
+						setRestore(null);
+						setNote("");
+					}
+				}, 400);
+				return () => window.clearInterval(timer);
+			}, [state, restore, sessionId, inputActions]);
+
+			const draft = peDraft(sessionId, inputActions);
+			const busy = state === "busy";
+			const hasDraft = Boolean(draft.trim());
+			const visible = hasDraft || busy || state === "undo" || state === "error";
+
+			useEffect(() => {
+				if (!visible && state !== "idle") {
+					setState("idle");
+					setRestore(null);
+					setNote("");
+				}
+			}, [visible, state]);
+
+			if (!visible) return null;
+
+			const run = async () => {
+				if (busy || !sessionId) return;
+				const origin = draft;
+				setState("busy");
+				setNote("");
+				try {
+					await new Promise((r) => window.setTimeout(r, 700));  // 假延迟，看得出脉冲
+					if (!aliveRef.current) return;
+					const produced = peFakeEnhance(origin);
+					if (!produced || produced === origin) {
+						setState("idle");
+						setNote(rewindText(t, "pe.unchanged", "无需改写"));
+						return;
+					}
+					hostSetDraft(sessionId, produced);
+					fillComposer(inputActions, produced);
+					setRestore({ origin, produced });
+					setState("undo");
+				} catch (e) {
+					if (!aliveRef.current) return;
+					setState("error");
+					setNote(String((e && e.message) || e).slice(0, 30));
+				}
+			};
+
+			const undo = () => {
+				if (!restore || !sessionId) return;
+				hostSetDraft(sessionId, restore.origin);
+				fillComposer(inputActions, restore.origin);
+				setRestore(null);
+				setState("idle");
+				setNote("");
+			};
+
+			const onClick = (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				if (busy) return;                    // 阶段 2 不做取消
+				if (state === "undo") return undo();
+				if (state === "error") { setState("idle"); setNote(""); }
+				run();
+			};
+
+			const titleMap = {
+				idle: rewindText(t, "pe.aria", "增强提示词"),
+				busy: rewindText(t, "pe.busy", "正在增强…"),
+				undo: rewindText(t, "pe.undo", "撤销增强"),
+				error: note || rewindText(t, "pe.retry", "重试"),
+			};
+
+			let icon;
+			if (state === "undo") {
+				icon = h("svg", { viewBox: "0 0 16 16", "aria-hidden": true },
+					h("path", { fill: "currentColor", d: "M7 3.2a5.2 5.2 0 1 1-4.9 6.9h1.7A3.6 3.6 0 1 0 7 4.8v2.2L3.6 3.7 7 .9v2.3z" }));
+			} else if (state === "error") {
+				icon = h("svg", { viewBox: "0 0 16 16", "aria-hidden": true },
+					h("path", { fill: "currentColor", d: "M8 1.6a3.1 3.1 0 0 1 2.9 2.1l3 8.1a1.6 1.6 0 0 1-1.5 2.2H3.6a1.6 1.6 0 0 1-1.5-2.2l3-8.1A3.1 3.1 0 0 1 8 1.6zm0 3.1a.7.7 0 0 0-.7.8l.2 3a.5.5 0 0 0 1 0l.2-3a.7.7 0 0 0-.7-.8zm0 5.6a.85.85 0 1 0 0 1.7.85.85 0 0 0 0-1.7z" }));
+			} else {
+				icon = h("span", {
+					style: { display: "block", width: "22px", height: "22px" },
+					dangerouslySetInnerHTML: { __html: busy ? PE_ICON_THINK : PE_ICON_IDLE },
+				});
+			}
+
+			return h("div", { className: "dshp-pe-wrap" },
+				h("style", null, PE_CSS),
+				h("button", {
+					type: "button",
+					className: "dshp-pe",
+					"data-state": state,
+					title: titleMap[state],
+					"aria-label": titleMap[state],
+					disabled: !sessionId || (state === "idle" && !hasDraft),
+					onMouseDown: (e) => e.preventDefault(),
+					onClick,
+				},
+					icon,
+					(state === "idle" && hasDraft) ? h("span", { className: "dshp-pe-dot" }) : null,
+				),
+				note ? h("span", { className: "dshp-pe-note", "data-tone": state === "error" ? "error" : "info" }, note) : null,
+			);
+		}
+
+		class PromptEnhanceSafe extends Component {
+			constructor(p) { super(p); this.state = { failed: false }; }
+			static getDerivedStateFromError() { return { failed: true }; }
+			componentDidCatch(error) { try { console.error("[dsh-purge-safe] prompt-enhance slot:", error); } catch { /* ignore */ } }
+			render() {
+				/* 坏了就整块不渲染 —— 这不是必需品，别在工具栏留死按钮 */
+				if (this.state.failed) return null;
+				return h(PromptEnhanceButton, this.props);
+			}
+		}
+		/* __DSH_PE_END__ */
+
+
 		class RewindSafe extends Component {
 			constructor(p) { super(p); this.state = { failed: false }; }
 			static getDerivedStateFromError() { return { failed: true }; }
@@ -23509,6 +23729,16 @@ const productTheme = createProductTheme();
 					t: ctx.locale.bind(NS),
 				}),
 			}, RewindSafe));
+			/* __DSH_PE_SLOT__ 提示词增强：order 30，排在撤销（20）后面 */
+			ctx.slots.inject("conversation.input.right", () => ctx.slots.register({
+				name: "conversation.input.right",
+				id: "dsh-purge-safe-prompt-enhance",
+				order: 30,
+				inject: (sessionId) => ({
+					sessionId,
+					t: ctx.locale.bind(NS),
+				}),
+			}, PromptEnhanceSafe));
 			// ctx.slots.inject("conversation.input.right", () => ctx.slots.register({
 			// 	name: "conversation.input.right",
 			// 	id: "dsh-purge-safe-continue",
