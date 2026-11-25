@@ -142,8 +142,8 @@ mysql -h $REDTEAM_VPS_HOST -P 13306 -u root -p
    - `command`：frps 与 frpc 两段完整命令 + 配置要点（token 脱敏）。
 2. **实测连通**：`curl --socks5-hostname $REDTEAM_VPS_HOST:1080 http://<内网目标>/`，通了才登记为 active；
    然后 `redteam_session_check` 复查。
-3. **得分**：`boundary`（隧道可达内网，evidence 写「隧道地址｜可达网段｜实测访问到的内网目标」）；
+3. **得分**：`boundary-strong`（隧道可达内网；按隔离强度也可选 boundary-logical/physical，evidence 写「隧道地址｜可达网段｜实测访问到的内网目标」）；
    通过它横向 → `server-host`。
 4. **交付给用户**：给出可直接粘贴的 `socks5://$REDTEAM_VPS_HOST:1080` 或映射端口，写清地址与端口。
-5. 记分时把实际命令/回显放进 `redteam_score_hit` 的 `command`/`result`，不需要再单独写 chain。
+5. 把实际命令/回显写进 `redteam_chain_add` 的 `tool`/`result`。
    （如 `frpc 注册成功，proxy socks5 start success`）。

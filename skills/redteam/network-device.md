@@ -54,7 +54,7 @@ nc -nv <ip> 22
 - 凭证：`redteam_credential_add`（source=默认口令/SNMP/配置泄露）；
 - 得分：`netdev` 普通 100 / 管理员 200；重定向/业务劫持 +200、植入远控 +1000 单独记；
 - 边界：跨隔离区才记 `boundary-*`；同区只记 `internal`；
-- 证据：路由表/策略/连接量截图（G7），命令写进 `score_hit` 的 `command`/`result`。
+- 证据：路由表/策略/连接量截图（G7），命令写进 `redteam_chain_add` 的 `tool`/`result`。
 
 ## OPSEC 与边界
 

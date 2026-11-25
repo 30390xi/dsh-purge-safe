@@ -643,6 +643,7 @@ const productTheme = createProductTheme();
 			const path = String(p || "");
 			const method = String((init && init.method) || "GET").toUpperCase();
 			if (path.indexOf("/dsh-purge-safe/uninstall") !== -1) return 90000;
+			if (path.indexOf("/dsh-purge-safe/prompt-enhance") !== -1) return 90000;
 			if (path.indexOf("/dsh-purge-safe/skill") !== -1) return method === "POST" ? 120000 : 20000;
 			// status 会在"应用"期间被后端的同步落盘阻塞，默认 20s 必然被 abort，界面只会显示"读取失败: timeout"。
 			if (path.indexOf("/dsh-purge-safe/status") !== -1) return 120000;
@@ -5514,8 +5515,7 @@ html.dark .ym-icon,
 			return String(liveDraft(sessionId, inputActions) || "");
 		}
 
-		/* 阶段 2 的本地假改写：只做「能看出效果」的最小实现，
-		   等阶段 3 接真模型时整个函数被换成 fetch 调用。 */
+		/* 阶段 2 的本地假改写：真模型路由 404（宿主无 llm 服务 / 旧版插件）时的降级实现。 */
 		function peFakeEnhance(draft) {
 			const trimmed = draft.trim();
 			if (!trimmed) return "";
@@ -5531,6 +5531,55 @@ html.dark .ym-icon,
 			].join("\n");
 		}
 
+		/* 路由探测：一次 404/405 → 永久降级本地假改写，不再反复探测。 */
+		let peRemoteMode = null;   // null=未探测, true=真模型, false=本地降级
+		async function peProbeRemote() {
+			if (peRemoteMode !== null) return peRemoteMode;
+			try {
+				const r = await fetch(apiUrl("/dsh-purge-safe/prompt-enhance"), withSurfaceHeaders({
+					method: "POST",
+					credentials: "same-origin",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ draft: " " }),
+				}));
+				/* 路由在：空草稿也是 400（JSON 错误码），不是 404 */
+				peRemoteMode = r.status !== 404;
+			} catch {
+				peRemoteMode = false;
+			}
+			return peRemoteMode;
+		}
+
+		/* 当前 UI 模式，随请求上报。后端只拿它做“提升到红队”，不能降级。
+		   用户切到红队预设而 agentPreset 尚未落到会话头时，这是唯一能救回模式的信号。 */
+		function peModeHint() {
+			try { return isRedteamModeActive() ? "redteam" : "official"; } catch { return ""; }
+		}
+
+		/* 真模型增强：signal 完全由调用方持有（取消按钮），超时合成进同一 signal。 */
+		async function peRemoteEnhance(sessionId, draft, signal) {
+			const timeout = AbortSignal.timeout(apiTimeoutMs("/dsh-purge-safe/prompt-enhance"));
+			const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
+			const r = await fetch(apiUrl("/dsh-purge-safe/prompt-enhance"), withSurfaceHeaders({
+				method: "POST",
+				credentials: "same-origin",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ sessionId, draft, modeHint: peModeHint() }),
+				signal: combined,
+			}));
+			let data = null;
+			const text = await r.text();
+			try { data = text ? JSON.parse(text) : null; } catch { /* non-json */ }
+			if (r.status === 404) {
+				peRemoteMode = false;   /* 插件刚被降级卸载路由：立即回本地模式 */
+				throw new Error("LOCAL_FALLBACK");
+			}
+			if (!r.ok || !data || data.ok !== true) {
+				throw new Error((data && (data.message || data.error)) || (r.status + " " + r.statusText));
+			}
+			return data;   /* { ok, kind, text, mode, provider, model, hasContext } */
+		}
+
 		function PromptEnhanceButton(props) {
 			const t = props.t || translate;
 			const sessionId = props.sessionId || currentSessionId(peSessions());
@@ -5539,6 +5588,7 @@ html.dark .ym-icon,
 			const [restore, setRestore] = useState(null);    // { origin, produced }
 			const [note, setNote] = useState("");
 			const aliveRef = useRef(true);
+			const peAbortRef = useRef(null);   // 进行中增强的 AbortController，busy 再点 = 取消
 
 			useEffect(() => () => { aliveRef.current = false; }, []);
 
@@ -5573,27 +5623,75 @@ html.dark .ym-icon,
 			if (!visible) return null;
 
 			const run = async () => {
-				if (busy || !sessionId) return;
+				if (!sessionId) return;
 				const origin = draft;
+				if (busy) {                    // busy 再点 = 取消进行中的增强
+					try { peAbortRef.current && peAbortRef.current.abort(); } catch { /* ignore */ }
+					return;
+				}
+				if (!origin.trim()) return;
+				const remote = await peProbeRemote();
+				const ctrl = new AbortController();
+				peAbortRef.current = ctrl;
 				setState("busy");
 				setNote("");
 				try {
-					await new Promise((r) => window.setTimeout(r, 700));  // 假延迟，看得出脉冲
-					if (!aliveRef.current) return;
-					const produced = peFakeEnhance(origin);
-					if (!produced || produced === origin) {
+					let produced;
+					let enhancedMode = "";
+					if (remote) {
+						const data = await peRemoteEnhance(sessionId, origin, ctrl.signal);
+						if (!aliveRef.current) return;
+						if (data.kind === "unchanged") {
+							setState("idle");
+							setNote(rewindText(t, "pe.unchanged", "无需改写"));
+							return;
+						}
+						produced = data.text || "";
+						enhancedMode = data.mode || "";
+						/* 两次校验都没过时后端会带 warnings：不能假装成功，给用户一个可见的提醒 */
+						if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+							setNote(rewindText(t, "pe.warn", "已增强（有校验提醒）"));
+						}
+					} else {
+						await new Promise((r) => window.setTimeout(r, 400));
+						if (!aliveRef.current) return;
+						produced = peFakeEnhance(origin);
+					}
+					/* 兜底：模型只回了个标签词，绝不当正文写进草稿。 */
+					if (!produced || produced === origin || /^(ENHANCED|UNCHANGED)\s*$/i.test(String(produced).trim())) {
 						setState("idle");
 						setNote(rewindText(t, "pe.unchanged", "无需改写"));
 						return;
 					}
 					hostSetDraft(sessionId, produced);
 					fillComposer(inputActions, produced);
-					setRestore({ origin, produced });
+					setRestore({ origin, produced, mode: enhancedMode });
 					setState("undo");
 				} catch (e) {
 					if (!aliveRef.current) return;
+					const msg = String((e && e.message) || e);
+					if (msg === "LOCAL_FALLBACK") {   // 探测时在、真调时没了：直接走本地
+						const produced = peFakeEnhance(origin);
+						if (produced && produced !== origin) {
+							hostSetDraft(sessionId, produced);
+							fillComposer(inputActions, produced);
+							setRestore({ origin, produced });
+							setState("undo");
+						} else {
+							setState("idle");
+							setNote(rewindText(t, "pe.unchanged", "无需改写"));
+						}
+						return;
+					}
+					if (/abort/i.test(msg)) {          // 用户取消：静默回 idle，草稿未动
+						setState("idle");
+						setNote("");
+						return;
+					}
 					setState("error");
-					setNote(String((e && e.message) || e).slice(0, 30));
+					setNote(msg.slice(0, 40));
+				} finally {
+					if (peAbortRef.current === ctrl) peAbortRef.current = null;
 				}
 			};
 
@@ -5618,7 +5716,9 @@ html.dark .ym-icon,
 			const titleMap = {
 				idle: rewindText(t, "pe.aria", "增强提示词"),
 				busy: rewindText(t, "pe.busy", "正在增强…"),
-				undo: rewindText(t, "pe.undo", "撤销增强"),
+				undo: rewindText(t, "pe.undo", "撤销增强")
+					+ (restore && restore.mode === "redteam" ? "（红队）" : "")
+					+ (restore && restore.mode === "official" ? "（官方）" : ""),
 				error: note || rewindText(t, "pe.retry", "重试"),
 			};
 
@@ -18190,7 +18290,31 @@ const productTheme = createProductTheme();
             h('h3', { className: 'rt-r2-h3' }, '3.3 内网资产得分复现'),
             (report.repro && report.repro.internal_segments || []).length === 0 ? h('div', { className: 'rt-r2-empty' }, '无内网资产得分项。') : reproList(report.repro.internal_segments, '3.3.', 'internal'),
             h('h3', { className: 'rt-r2-h3' }, '3.4 靶标权限复现'),
-            (report.repro && report.repro.target || []).length === 0 ? h('div', { className: 'rt-r2-empty' }, '无靶标权限得分项。') : reproList(report.repro.target, '3.4.', 'target'))))
+            (report.repro && report.repro.target || []).length === 0 ? h('div', { className: 'rt-r2-empty' }, '无靶标权限得分项。') : reproList(report.repro.target, '3.4.', 'target')),
+          h('section', { className: 'rt-r2-section', id: 'rt-r2-data' },
+            h('h2', { className: 'rt-r2-h2' }, '四、取得的数据'),
+            (report.data_proofs || []).length === 0
+              ? h('div', { className: 'rt-r2-empty' }, '本次没有结构化数据证明。若拿到了数据，用 redteam_data_proof 记录来源/字段/条数/样本。')
+              : table(['目标', '来源', '接口/库表', '字段', '条数', '≥1 万条', '样本'], (report.data_proofs || []).map((p) => {
+                const fields = Array.isArray(p.fields) ? p.fields.join('、') : (p.fields || '—')
+                return [p.target || '—', p.source || '—', p.interface || '—', fields || '—',
+                  p.row_count === null || p.row_count === undefined ? '—' : p.row_count,
+                  p.meets_threshold ? '是' : '否', p.evidence_ref || (p.sample ? '见下' : '—')]
+              })),
+            (report.data_proofs || []).filter((p) => p.query || p.sample).map((p, i) => h('div', { key: 'dp' + i },
+              h('h4', { className: 'rt-r2-h4' }, (p.target || p.source || '数据') + ' 的提取语句 / 样本'),
+              code(String(p.query || p.sample).slice(0, 1500), '提取语句', 'sql')))),
+          report.deliverable
+            ? h('section', { className: 'rt-r2-section', id: 'rt-r2-deliver' },
+              h('h2', { className: 'rt-r2-h2' }, '五、交付前检查'),
+              h('div', { className: report.deliverable.ok ? 'rt-r2-muted' : 'rt-r2-gap' },
+                '结论：' + (report.deliverable.ok ? '可以交付' : '不可交付')),
+              (report.deliverable.blockers || []).map((b, i) => h('div', { key: 'db' + i, className: 'rt-r2-gap' },
+                '阻断 ' + b.code + '（' + b.count + ' 项）：' + b.hint)),
+              (report.deliverable.warnings || []).map((w, i) => h('div', { key: 'dw' + i, className: 'rt-r2-muted' }, '提醒：' + w)),
+              (!(report.deliverable.blockers || []).length && !(report.deliverable.warnings || []).length)
+                ? h('div', { className: 'rt-r2-muted' }, '无阻断项、无提醒') : null)
+            : null))
     }
 
 

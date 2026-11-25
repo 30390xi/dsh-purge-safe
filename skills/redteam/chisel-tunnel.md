@@ -110,8 +110,8 @@ proxychains4 -f runs/proxychains-1080.conf \
    - `command`：完整命令原文（服务端 + 客户端两段都要）。
 2. **实测连通性**：`curl --socks5-hostname <listen> http://<内网目标>/` 或 `proxychains4 -f ... curl ...`，
    通了才算隧道成立；然后 `redteam_session_check` 回写状态。
-3. **得分**：隧道可达内网 → `redteam_score_hit`（`boundary`，evidence 写「隧道地址｜可达网段｜实测访问到的内网目标」）；
+3. **得分**：隧道可达内网 → `redteam_score_hit`（`boundary-strong`，按隔离强度也可选 boundary-logical/physical/supply，evidence 写「隧道地址｜可达网段｜实测访问到的内网目标」）；
    通过它横向到其它主机 → `server-host`。
 4. **交付给用户**：给出可直接粘贴的配置——`socks5://<listen>`（或 `ssh -D` / frp 映射到用户机器的方法），
    写清监听地址与端口，并说明该隧道跨越了靶标边界。
-5. 记分时把实际命令/回显放进 `redteam_score_hit` 的 `command`/`result`，不需要再单独写 chain。
+5. 把实际命令/回显写进 `redteam_chain_add` 的 `tool`/`result`。

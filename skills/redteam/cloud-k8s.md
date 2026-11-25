@@ -70,7 +70,7 @@ curl -k https://<node>:10250/pods
 
 - 资产：`redteam_asset_add` / `redteam_batch kind=assets`（云主机、API、对象存储）；
 - 凭证：`redteam_credential_add`（AK/SK、token、kubeconfig）；
-- 得分：`cloud-platform`、`server-host`、`model-compute`、`file-storage`；命令/回显写进 `score_hit` 的 `command`/`result`；
+- 得分：`cloud-platform`、`server-host`、`model-compute`、`file-storage`；命令/回显写进 `redteam_chain_add` 的 `tool`/`result`；
 - 边界：跨云/跨账号进入主防单位内网才考虑 `boundary-*`，按四问提供证据。
 
 ## OPSEC 与边界

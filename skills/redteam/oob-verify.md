@@ -30,7 +30,7 @@ enabled: true
    Windows 用 `nslookup` / `certutil -urlcache -f http://...`；按目标平台选；
 3. **轮询回调**：确认来源 IP、时间、路径/子域；如果只有 DNS，记录解析时间；
 4. **最小命令验证**：确认回调后，再用 `id`/`whoami`/`hostname` 或唯一字符串确认执行上下文；
-5. **落库**：`redteam_vuln_add`（status=confirmed，`request`/`response` 或 payload/回显）+ `score_hit` 的 `command`/`result`；OOB 记录作为 `evidence_ref`。
+5. **落库**：`redteam_vuln_add`（status=confirmed，`request`/`response` 或 payload/回显）+ `redteam_chain_add` 的 `tool`/`result`；OOB 记录作为 `evidence_ref`。
 
 ## 判定
 

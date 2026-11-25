@@ -49,7 +49,7 @@ enabled: true
     query="GET /api/users?pageSize=1000&page=1"
     evidence_ref="runs/api-users-12000.jsonl"
   ```
-- 得分：`web-app`（账号/后台）、`db-credential`（数据库）、数据按 G2；命令/请求写进 `score_hit` 的 `command`/`result`；
+- 得分：`web-app`（账号/后台）、`db-credential`（数据库）、数据按 G2；命令/请求写进 `redteam_chain_add` 的 `tool`/`result`；
 - 报告引用 data_proof 的条数与字段，不写“拖库成功”这种空话。
 
 ## OPSEC 与边界

@@ -43,7 +43,7 @@ enabled: true
 
 - 隧道/会话：`redteam_tunnel_add`（kind/listen/entry/reach/entry_kind/command）；`redteam_session_check` 带 `probe_targets` 实测内网；
 - 访问：`redteam_access_add`；凭据：`redteam_credential_add`；
-- 得分：`internal`/`boundary-*`；命令写进 `score_hit` 的 `command`/`result`；
+- 得分：`internal`/`boundary-*`；命令写进 `redteam_chain_add` 的 `tool`/`result`；
 - 长期任务前后各跑一次 session_check，掉线先修再继续。
 
 ## OPSEC

@@ -43,7 +43,7 @@ enabled: true
 - `boundary-supply`：用户确认范围 + 进入主防单位内网证据（`scope_confirmed=true`，boundary 四问）；
 - CI 服务器/制品库：`server-host`（普通/管理员）；
 - 拿到源码/密钥/数据：按 `web-app`/`db-credential`/`file-storage` 与 G2；
-- 证据：`redteam_vuln_add` + `request`/`response`；`redteam_access_add`；`redteam_chain_add` 不再单独调，命令写进 `score_hit` 的 `command`/`result`。
+- 证据：`redteam_vuln_add` + `request`/`response`；`redteam_access_add`；命令写进 `redteam_chain_add` 的 `tool`/`result`。
 
 ## OPSEC 与边界
 

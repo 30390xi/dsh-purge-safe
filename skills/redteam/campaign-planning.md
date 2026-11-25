@@ -37,6 +37,10 @@ enabled: true
    - 至少写 2–3 条互相独立的初始访问路径；
    - 每条路径写：入口 → 需要的条件 → 预期证据 → 失败信号 → 替代路径；
    - 不要把所有资源压在一个 Nday 或一个后台弱口令上。
+   - **计划与假设必须用 `redteam_plan` 落库**（不是只写在对话里）：
+     `op=set` 写目标/范围/时间盒（含结构化 `deadline`）/噪声预算/停止条件；
+     `op=hypothesis` 逐条写假设；收口时 `op=hypothesis_update` 标 confirmed/refuted/abandoned。
+     上下文压缩后只有库里的东西还算数，交付前也靠它核对哪条没收口。
 
 5. **时间盒与预算**
    - 每个阶段/资产类别的最长时间、请求量、并发数；
@@ -70,7 +74,12 @@ enabled: true
 - `redteam_preflight`：资源与技能可用性；
 - `redteam_score_list` / `redteam_asset_stats` / `redteam_sessions`：当前事实；
 - `redteam_asset_query` / `redteam_vuln_query`：避免重复；
-- `redteam_score_hit` 的 `command`/`result`：把“假设 → 动作 → 结果”随得分一起记；不需要单独写 chain；
+- **步骤与得分分开记，两边都要有**：
+  - `redteam_chain_add`（`tool`=实际命令原文、`detail`=线索与理由、`result`=实际回显）——报告里的“怎么拿到的”全靠它；
+  - `redteam_score_hit`（`evidence`=拿到什么：目标资产 + 账号/权限/数据量）——报告里的“拿了多少分”靠它；
+    多档得分点（如服务器主机普通 10 / 管理员 50）**必须填 `points`**，不填就不是“默认普通档”，系统会拒绝自动记分；
+  - 同一次调用里两者都要：chain_add 带 `point_code`+`evidence`（+多档时 `points`）会自动记分；
+- `redteam_http_evidence_add`：原始请求/响应（可粘进 Yakit 复现），漏了交付时会被 `HIT_NO_EVIDENCE` 阻断；
 - `specialist-paths`：资产不属于 Web/服务器时，按类型换打法；
 - `score-coverage`：把打法映射到得分点；
 - `deepseek-web-intel`：公开情报检索与网页正文；

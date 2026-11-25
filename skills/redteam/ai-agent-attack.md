@@ -43,7 +43,7 @@ enabled: true
 - `ai-agent`：控制/操作 Agent 的深度（100–500）；
 - `model-compute` / `model-data`：系统管理权限 500；知识库/超大数据 ×2；
 - 普通模型 API 未授权：按 `web-app`/`server-host` 实际权限，不硬套 AI 高分；
-- 证据：`redteam_vuln_add`（`request`/`response` 或 payload/输出）+ `score_hit` 的 `command`/`result`；
+- 证据：`redteam_vuln_add`（`request`/`response` 或 payload/输出）+ `redteam_chain_add` 的 `tool`/`result`；
 - 提示词注入 evidence 写清“输入 → 输出/工具调用 → 影响”，不要只贴一段 prompt。
 
 ## OPSEC 与边界

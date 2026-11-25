@@ -137,12 +137,12 @@ msf6 > exploit -j
 
 ## 七、输出与落库（强制）
 
-1. **拿到回连会话立刻记分**：`redteam_score_hit`（`server-host` / `server-host`），`evidence` 写「资产｜shell 类型与权限」（如 `10.0.0.5｜root shell（uid=0）`）。
+1. **拿到回连会话立刻记分**：`redteam_score_hit`（`server-host`，普通 10 / 管理员 50，按档填 `points`），`evidence` 写「资产｜shell 类型与权限」（如 `10.0.0.5｜root shell（uid=0）`）。
 2. **会话落库**：`redteam_access_add`（`method=reverse-shell`，写清 `target`、`user`、`privilege`、监听地址与端口）。
 3. **隧道落库**（若通过它进了内网）：`redteam_tunnel_add`，`entry_kind` 必须说清目标侧那一端
    （`target-outbound`=目标反弹/目标跑 frp 客户端、`target-http`=经目标 WebShell 的 suo5、`target-agent`=经目标已控进程转发），
    然后 `redteam_session_check` 实测连通性。
-4. 记分时把实际命令/回显放进 `redteam_score_hit` 的 `command`/`result`，不需要再单独写 chain。
+4. 把实际命令/回显写进 `redteam_chain_add` 的 `tool`/`result`。
    `tool` 写**实际命令原文**（含完整反弹命令或 MSF 配置），`result` 写回显摘要（如 `uid=0(root) gid=0(root)`）。
 5. **交付给用户能复用的入口**：优先落地**冰蝎马/哥斯拉马**（技能 `webshell-toolkit`）——用户能在控制台直连操作；
    临时反弹会话要说明"这是一次性会话，非交付入口"。

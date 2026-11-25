@@ -57,7 +57,7 @@ bloodhound-python -u <user> -p '<pass>' -d <domain> -dc <DC_IP> -c All
 
 - 凭据/哈希/票据：`redteam_credential_add`（`secret_type` 写 ntlm/kerberos，`source` 写 Kerberoast/AS-REP/DCSync/ACL）；
 - 登录/会话：`redteam_access_add`（method=smb/winrm/ldap）；
-- 得分：域控/堡垒机/SSO/终端管理 → `central-system`；域名/DNS 控制 → `domain-control`；普通主机 → `server-host`；命令写进 `redteam_score_hit` 的 `command`/`result`。
+- 得分：域控/堡垒机/SSO/终端管理 → `central-system`；域名/DNS 控制 → `domain-control`；普通主机 → `server-host`；命令写进 `redteam_chain_add` 的 `tool`/`result`。
 - 高价值结果（域控、ADCS）必须换命令/重新登录复核。
 
 ## OPSEC 与边界
