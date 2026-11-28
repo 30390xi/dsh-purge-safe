@@ -28,6 +28,7 @@ if (!client.includes('"dock.clean"')) {
 			"dock.toggle": "dsh-purge-safe",
 			"dock.newSession": "dsh-purge-safe",
 			"dock.full": "全面浏览",
+			"dock.exitFull": "退出全屏",
 			"dock.close": "收起",
 			"dock.unauthorized": "未授权",
 			"auth.title": "演练台授权确认",
@@ -52,6 +53,7 @@ if (!client.includes('"dock.clean"')) {
 			"dock.toggle": "dsh-purge-safe",
 			"dock.newSession": "dsh-purge-safe",
 			"dock.full": "Full view",
+			"dock.exitFull": "Exit full screen",
 			"dock.close": "Collapse",
 			"dock.unauthorized": "Unauthorized",
 			"auth.title": "Drill console authorization",
@@ -109,7 +111,10 @@ if (!client.includes(".dshp-dock{")) {
 .dshp-auth-modal{width:min(680px,100%);max-height:min(88vh,820px);display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--dsw-alias-border-l1,#333);border-radius:12px;background:var(--dsw-alias-bg-layer-1,#1a1a1a);color:var(--dsw-alias-label-primary,#eee)}
 .dshp-auth-modal h2{margin:0;font-size:16px;font-weight:600}
 .dshp-auth-warn{padding:8px 10px;border-radius:8px;background:#3a2e18;color:#f0d48a;font-size:13px}
-.dshp-auth-legal{overflow:auto;height:300px;margin:0;padding:10px 12px;border:1px solid var(--dsw-alias-border-l1,#333);border-radius:8px;background:#121212;font-size:13px;line-height:1.55}
+.dshp-auth-legal{overflow:auto;height:300px;margin:0;padding:10px 12px;border:1px solid var(--dsw-alias-border-l1,#333);border-radius:8px;background:#121212;color:var(--ui-text,#e9f0f8);font-size:13px;line-height:1.55}
+.dshp-auth-mask[data-theme="dusk"] .dshp-auth-legal{background:var(--ui-surface,#1b2430);color:var(--ui-text,#e9f0f8)!important;border-color:var(--ui-line,#344253)}
+.dshp-auth-mask[data-theme="dusk"] .dshp-auth-legal :is(h3,p,strong,em,li,a){color:var(--ui-text,#e9f0f8)!important}
+.dshp-auth-mask[data-theme="dusk"] .dshp-auth-checks{color:var(--ui-text,#e9f0f8)}
 .dshp-auth-legal h3{margin:14px 0 4px;font-size:13px}
 .dshp-auth-legal h3:first-child{margin-top:0}
 .dshp-auth-legal p{margin:0 0 8px}
